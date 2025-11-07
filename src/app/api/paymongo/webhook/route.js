@@ -1,6 +1,7 @@
+// src/app/api/paymongo/webhook/route.js
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { PayMongo } from 'paymongo'
+import Paymongo from 'paymongo' // <-- THE FIX IS HERE
 import { headers } from 'next/headers'
 
 // Admin client to bypass RLS
@@ -8,17 +9,14 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
-const paymongo = new PayMongo(process.env.PAYMONGO_SECRET_KEY)
 
-// Disable body parsing to get raw body for webhook signature verification
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+// Correctly instantiate Paymongo
+const paymongo = new Paymongo(process.env.PAYMONGO_SECRET_KEY)
 
 export async function POST(request) {
   try {
     const rawBody = await request.text()
-    const headersList = headers()
-    const signature = headersList.get('paymongo-signature')
+    const signature = headers().get('paymongo-signature')
     
     // Verify the webhook signature
     const event = paymongo.webhooks.constructEvent(
@@ -29,8 +27,8 @@ export async function POST(request) {
 
     // Handle the 'checkout.session.completed' event
     if (event.type === 'checkout.session.completed') {
-      const session = event.data.attributes
-      const metadata = session.metadata || {}
+      const session = event.data.attributes.data
+      const metadata = session.attributes.metadata
       const userId = metadata.supabase_user_id
       const plan = metadata.plan
 

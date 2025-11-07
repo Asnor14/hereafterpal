@@ -1,6 +1,7 @@
+// src/app/api/create-checkout/route.js
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { PayMongo } from 'paymongo'
+import Paymongo from 'paymongo' // <-- THE FIX IS HERE
 
 // Create a Supabase client with the SERVICE_ROLE_KEY
 const supabaseAdmin = createClient(
@@ -8,7 +9,8 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-const paymongo = new PayMongo(process.env.PAYMONGO_SECRET_KEY)
+// Correctly instantiate Paymongo
+const paymongo = new Paymongo(process.env.PAYMONGO_SECRET_KEY)
 
 // Price list
 const prices = {
