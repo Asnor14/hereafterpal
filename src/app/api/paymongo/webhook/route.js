@@ -3,21 +3,18 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { headers } from 'next/headers'
 
-// --- THE FIX ---
-// We must use 'require' for the paymongo CJS library
-const Paymongo = require('paymongo')
-// --- END FIX ---
-
 // Admin client to bypass RLS
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-const paymongo = new Paymongo(process.env.PAYMONGO_SECRET_KEY)
-
 export async function POST(request) {
   try {
+    // Use require inside function to avoid bundling issues
+    const Paymongo = require('paymongo')
+    const paymongo = new Paymongo(process.env.PAYMONGO_SECRET_KEY)
+
     const rawBody = await request.text()
     const signature = headers().get('paymongo-signature')
     

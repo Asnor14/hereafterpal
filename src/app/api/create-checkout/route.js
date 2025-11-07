@@ -2,18 +2,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// --- THE FIX ---
-// We must use 'require' for the paymongo CJS library
-const Paymongo = require('paymongo')
-// --- END FIX ---
-
 // Create a Supabase client with the SERVICE_ROLE_KEY
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
-
-const paymongo = new Paymongo(process.env.PAYMONGO_SECRET_KEY)
 
 // Price list
 const prices = {
@@ -23,6 +16,10 @@ const prices = {
 
 export async function POST(request) {
   try {
+    // Use require inside function to avoid bundling issues
+    const Paymongo = require('paymongo')
+    const paymongo = new Paymongo(process.env.PAYMONGO_SECRET_KEY)
+
     const { plan, userId } = await request.json()
     if (!plan || !userId) throw new Error('Plan and User ID are required')
     if (!prices[plan]) throw new Error('Invalid plan')
