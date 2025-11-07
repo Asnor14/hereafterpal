@@ -1,7 +1,11 @@
 // src/app/api/create-checkout/route.js
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import Paymongo from 'paymongo' // <-- THE FIX IS HERE
+
+// --- THE FIX ---
+// We must use 'require' for the paymongo CJS library
+const Paymongo = require('paymongo')
+// --- END FIX ---
 
 // Create a Supabase client with the SERVICE_ROLE_KEY
 const supabaseAdmin = createClient(
@@ -9,7 +13,6 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-// Correctly instantiate Paymongo
 const paymongo = new Paymongo(process.env.PAYMONGO_SECRET_KEY)
 
 // Price list
@@ -34,12 +37,11 @@ export async function POST(request) {
           {
             amount: selectedPrice.amount,
             currency: 'PHP',
-            images: [], // Add a logo URL here
+            images: [],
             name: selectedPrice.name,
             quantity: 1,
           },
         ],
-        // We pass the user ID and plan in metadata
         metadata: {
           supabase_user_id: userId,
           plan: plan,

@@ -1,8 +1,12 @@
 // src/app/api/paymongo/webhook/route.js
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import Paymongo from 'paymongo' // <-- THE FIX IS HERE
 import { headers } from 'next/headers'
+
+// --- THE FIX ---
+// We must use 'require' for the paymongo CJS library
+const Paymongo = require('paymongo')
+// --- END FIX ---
 
 // Admin client to bypass RLS
 const supabaseAdmin = createClient(
@@ -10,7 +14,6 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-// Correctly instantiate Paymongo
 const paymongo = new Paymongo(process.env.PAYMONGO_SECRET_KEY)
 
 export async function POST(request) {
