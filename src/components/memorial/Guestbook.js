@@ -74,6 +74,9 @@ export default function Guestbook({ messages, onSubmit, isLoading }) {
         return 'S'; // Stranger
     };
 
+    const [isExpanded, setIsExpanded] = useState(false);
+    const displayedMessages = isExpanded ? messages : messages.slice(0, 3);
+
     return (
         <>
             {/* Messages List - Displayed in the main content area */}
@@ -87,54 +90,67 @@ export default function Guestbook({ messages, onSubmit, isLoading }) {
                             </p>
                         </div>
                     ) : messages && messages.length > 0 ? (
-                        messages.map((msg, index) => (
-                            <motion.div
-                                key={msg.id || index}
-                                initial={{ opacity: 0, y: 15 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.4, delay: index * 0.05 }}
-                                className="memorial-card p-4 md:p-6"
-                            >
-                                {/* Author Info */}
-                                <div className="flex items-start gap-3">
-                                    {/* Avatar with Role Initial */}
-                                    <div className="w-10 h-10 rounded-full bg-memorial-gold/20 dark:bg-memorialDark-gold/20 flex items-center justify-center flex-shrink-0">
-                                        <span className="text-memorial-gold dark:text-memorialDark-gold font-semibold text-sm">
-                                            {getRoleInitial(msg.role)}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between gap-2 mb-1">
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="font-semibold text-memorial-text dark:text-memorialDark-text">
-                                                    {msg.author_name}
-                                                </h4>
-                                                {msg.role && (
-                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-memorial-gold/10 dark:bg-memorialDark-gold/10 text-memorial-gold dark:text-memorialDark-gold">
-                                                        {msg.role}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <time
-                                                dateTime={msg.created_at}
-                                                className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary whitespace-nowrap"
-                                            >
-                                                {new Date(msg.created_at).toLocaleDateString('en-US', {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                })}
-                                            </time>
+                        <>
+                            {displayedMessages.map((msg, index) => (
+                                <motion.div
+                                    key={msg.id || index}
+                                    initial={{ opacity: 0, y: 15 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                                    className="memorial-card p-4 md:p-6"
+                                >
+                                    {/* Author Info */}
+                                    <div className="flex items-start gap-3">
+                                        {/* Avatar with Role Initial */}
+                                        <div className="w-10 h-10 rounded-full bg-memorial-gold/20 dark:bg-memorialDark-gold/20 flex items-center justify-center flex-shrink-0">
+                                            <span className="text-memorial-gold dark:text-memorialDark-gold font-semibold text-sm">
+                                                {getRoleInitial(msg.role)}
+                                            </span>
                                         </div>
-                                        <p className="text-sm md:text-base text-memorial-textSecondary dark:text-memorialDark-textSecondary leading-relaxed whitespace-pre-wrap">
-                                            {msg.message}
-                                        </p>
+
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2 mb-1">
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-semibold text-memorial-text dark:text-memorialDark-text">
+                                                        {msg.author_name}
+                                                    </h4>
+                                                    {msg.role && (
+                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-memorial-gold/10 dark:bg-memorialDark-gold/10 text-memorial-gold dark:text-memorialDark-gold">
+                                                            {msg.role}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <time
+                                                    dateTime={msg.created_at}
+                                                    className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary whitespace-nowrap"
+                                                >
+                                                    {new Date(msg.created_at).toLocaleDateString('en-US', {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        year: 'numeric',
+                                                    })}
+                                                </time>
+                                            </div>
+                                            <p className="text-sm md:text-base text-memorial-textSecondary dark:text-memorialDark-textSecondary leading-relaxed whitespace-pre-wrap">
+                                                {msg.message}
+                                            </p>
+                                        </div>
                                     </div>
+                                </motion.div>
+                            ))}
+
+                            {messages.length > 3 && (
+                                <div className="flex justify-center pt-2">
+                                    <button
+                                        onClick={() => setIsExpanded(!isExpanded)}
+                                        className="inline-flex items-center justify-center px-6 py-2 border border-memorial-gold dark:border-memorialDark-gold text-memorial-gold dark:text-memorialDark-gold rounded-full hover:bg-memorial-gold hover:text-white dark:hover:bg-memorialDark-gold dark:hover:text-black transition-all duration-300 text-sm font-medium"
+                                    >
+                                        {isExpanded ? 'View Less' : `View All (${messages.length})`}
+                                    </button>
                                 </div>
-                            </motion.div>
-                        ))
+                            )}
+                        </>
                     ) : (
                         <div className="text-center py-12 text-memorial-textSecondary dark:text-memorialDark-textSecondary">
                             <Heart size={48} className="mx-auto mb-4 opacity-30" />

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil, Eye } from 'lucide-react'
 
 export default function DashboardPage() {
   const supabase = createClient()
@@ -71,15 +71,20 @@ export default function DashboardPage() {
                   {memorial.service_type === 'PAWS' ? 'Pet Memorial' : 'Human Memorial'}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <Link
                   href={`/memorial/${memorial.id}/edit`}
-                  className="text-sm font-medium text-light-accent dark:text-dark-accent"
+                  className="p-2 rounded-lg hover:bg-light-accent/10 dark:hover:bg-dark-accent/10 text-light-accent dark:text-dark-accent transition-colors"
+                  title="Edit Memorial"
                 >
-                  Edit
+                  <Pencil size={20} />
                 </Link>
-                <Link href={`/memorial/${memorial.id}`} className="text-sm font-medium">
-                  View Public Page
+                <Link
+                  href={`/memorial/${memorial.id}`}
+                  className="p-2 rounded-lg hover:bg-light-text/10 dark:hover:bg-dark-text/10 transition-colors"
+                  title="View Public Page"
+                >
+                  <Eye size={20} />
                 </Link>
               </div>
             </div>

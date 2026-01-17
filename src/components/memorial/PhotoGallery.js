@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { CldImage } from 'next-cloudinary';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function PhotoGallery({ photos }) {
@@ -39,39 +40,57 @@ export default function PhotoGallery({ photos }) {
         <>
             {/* Gallery Grid */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 lg:gap-5">
-                {photos.map((photo, index) => (
-                    <motion.div
-                        key={photo.id || index}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: index * 0.05 }}
-                        className="relative aspect-square overflow-hidden rounded-memorial cursor-pointer group"
-                        onClick={() => openLightbox(index)}
-                    >
-                        <Image
-                            src={photo.url}
-                            alt={photo.caption || `Memorial photo ${index + 1}`}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105 blur-up"
-                            style={{
-                                filter: 'saturate(0.9)',
-                            }}
-                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        />
+                {photos.map((photo, index) => {
+                    const imgSrc = photo.url;
+                    const isCloudinaryId = !imgSrc?.startsWith('http');
 
-                        {/* Desktop: Caption overlay on hover */}
-                        {photo.caption && (
-                            <div className="hidden md:block absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex items-end">
-                                <p className="text-white text-sm leading-relaxed">
-                                    {photo.caption}
-                                </p>
-                            </div>
-                        )}
+                    return (
+                        <motion.div
+                            key={photo.id || index}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.4, delay: index * 0.05 }}
+                            className="relative aspect-square overflow-hidden rounded-memorial cursor-pointer group"
+                            onClick={() => openLightbox(index)}
+                        >
+                            {isCloudinaryId ? (
+                                <CldImage
+                                    src={imgSrc}
+                                    alt={photo.caption || `Memorial photo ${index + 1}`}
+                                    fill
+                                    className="object-cover transition-transform duration-300 group-hover:scale-105 blur-up"
+                                    style={{
+                                        filter: 'saturate(0.9)',
+                                    }}
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                />
+                            ) : (
+                                <Image
+                                    src={imgSrc}
+                                    alt={photo.caption || `Memorial photo ${index + 1}`}
+                                    fill
+                                    className="object-cover transition-transform duration-300 group-hover:scale-105 blur-up"
+                                    style={{
+                                        filter: 'saturate(0.9)',
+                                    }}
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                />
+                            )}
 
-                        {/* Mobile: Caption below (shown in lightbox instead) */}
-                    </motion.div>
-                ))}
+                            {/* Desktop: Caption overlay on hover */}
+                            {photo.caption && (
+                                <div className="hidden md:block absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex items-end">
+                                    <p className="text-white text-sm leading-relaxed">
+                                        {photo.caption}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Mobile: Caption below (shown in lightbox instead) */}
+                        </motion.div>
+                    );
+                })}
             </div>
 
             {/* Lightbox */}
@@ -82,7 +101,7 @@ export default function PhotoGallery({ photos }) {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center no-print"
+                        className="fixed inset-0 z-[110] bg-black/95 flex items-center justify-center no-print"
                         onClick={closeLightbox}
                     >
                         {/* Close Button */}
@@ -124,14 +143,25 @@ export default function PhotoGallery({ photos }) {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="relative w-full max-w-6xl h-[70vh] md:h-[80vh]">
-                                <Image
-                                    src={photos[selectedIndex].url}
-                                    alt={photos[selectedIndex].caption || `Photo ${selectedIndex + 1}`}
-                                    fill
-                                    className="object-contain"
-                                    sizes="100vw"
-                                    priority
-                                />
+                                {!photos[selectedIndex].url?.startsWith('http') ? (
+                                    <CldImage
+                                        src={photos[selectedIndex].url}
+                                        alt={photos[selectedIndex].caption || `Photo ${selectedIndex + 1}`}
+                                        fill
+                                        className="object-contain"
+                                        sizes="100vw"
+                                        priority
+                                    />
+                                ) : (
+                                    <Image
+                                        src={photos[selectedIndex].url}
+                                        alt={photos[selectedIndex].caption || `Photo ${selectedIndex + 1}`}
+                                        fill
+                                        className="object-contain"
+                                        sizes="100vw"
+                                        priority
+                                    />
+                                )}
                             </div>
 
                             {/* Caption */}

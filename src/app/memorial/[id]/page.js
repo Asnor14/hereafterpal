@@ -5,7 +5,9 @@ import { useParams } from 'next/navigation';
 import MemorialNav from '@/components/memorial/MemorialNav';
 import MemorialHero from '@/components/memorial/MemorialHero';
 import Timeline from '@/components/memorial/Timeline';
-import PhotoGallery from '@/components/memorial/PhotoGallery';
+import MemoryLane from '@/components/memorial/MemoryLane';
+
+
 import Guestbook from '@/components/memorial/Guestbook';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import toast from 'react-hot-toast';
@@ -65,6 +67,29 @@ export default function MemorialProfilePage() {
     };
 
     fetchMessages();
+  }, [memorialId, supabase]);
+
+  // Fetch gallery photos
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  useEffect(() => {
+    if (!memorialId) return;
+
+    const fetchPhotos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('gallery_photos')
+          .select('*')
+          .eq('memorial_id', memorialId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setGalleryPhotos(data || []);
+      } catch (error) {
+        console.error('Error fetching photos:', error);
+      }
+    };
+
+    fetchPhotos();
   }, [memorialId, supabase]);
 
   // Handle guestbook submission
@@ -227,8 +252,12 @@ export default function MemorialProfilePage() {
         {/* Divider */}
         <div className="border-t border-memorial-divider dark:border-memorialDark-divider my-12 md:my-16" />
 
-        {/* Photo Gallery Section - TODO: Fetch from gallery_photos table */}
-        {/* Photos will be added here when gallery feature is implemented */}
+        {/* Memory Lane Section */}
+        {galleryPhotos && galleryPhotos.length > 0 && (
+          <section id="photos" className="scroll-mt-20 -mx-4 md:-mx-6 lg:mx-0">
+            <MemoryLane photos={galleryPhotos} memorialName={memorial.name} />
+          </section>
+        )}
 
         {/* Guestbook Section */}
         <section id="guestbook" className="py-12 md:py-16 scroll-mt-20">

@@ -14,6 +14,7 @@ export default function EditMemorialPage() {
 
   const [bio, setBio] = useState('')
   const [visibility, setVisibility] = useState('private')
+  const [gender, setGender] = useState('female')
 
   const [letters, setLetters] = useState([])
   const [loading, setLoading] = useState(true)
@@ -53,6 +54,7 @@ export default function EditMemorialPage() {
       setMemorial(memorialData)
       setBio(memorialData.bio || '')
       setVisibility(memorialData.visibility || 'private')
+      setGender(memorialData.gender || 'female')
 
       // Fetch subscription
       const { data: subData } = await supabase
@@ -90,7 +92,7 @@ export default function EditMemorialPage() {
     const toastId = toast.loading('Saving changes...')
     const { error } = await supabase
       .from('memorials')
-      .update({ bio: bio, visibility: visibility })
+      .update({ bio: bio, visibility: visibility, gender: gender })
       .eq('id', memorialId)
 
     toast.dismiss(toastId)
@@ -210,6 +212,20 @@ export default function EditMemorialPage() {
                 <option value="public" disabled={!isPaidUser}>
                   Public (Visible to anyone with the link) {isPaidUser ? ' (Plan Active)' : ' (Paid Plan Required)'}
                 </option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="gender">
+                Gender
+              </label>
+              <select
+                id="gender"
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="w-full p-2 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
+              >
+                <option value="female">Female</option>
+                <option value="male">Male</option>
               </select>
             </div>
             <button
