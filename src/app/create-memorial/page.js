@@ -53,7 +53,7 @@ export default function CreateMemorialPage() {
 
   // Character count for bio
   const maxBioLength = 5000
-  const minBioLength = 50
+  const minBioLength = 10
   const bioLength = bio.length
 
   // Months for dropdown
