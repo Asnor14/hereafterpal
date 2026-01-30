@@ -796,6 +796,133 @@
   .activity-empty {
     @apply flex flex-col items-center justify-center py-8 gap-2;
   }
+
+  /* ===== ACCOUNT PAGE ===== */
+
+  .account-page {
+    @apply max-w-4xl mx-auto;
+  }
+
+  .account-header {
+    @apply mb-8;
+  }
+
+  .account-title {
+    @apply text-2xl md:text-3xl font-serif;
+    @apply text-memorial-text dark:text-memorialDark-text;
+    @apply mb-2;
+  }
+
+  .account-subtitle {
+    @apply text-memorial-textSecondary dark:text-memorialDark-textSecondary;
+  }
+
+  .account-tabs {
+    @apply flex gap-2 mb-6;
+    @apply overflow-x-auto pb-2;
+    @apply border-b border-memorial-borderLight dark:border-memorialDark-border;
+  }
+
+  .account-tab {
+    @apply flex items-center gap-2 px-4 py-2;
+    @apply text-sm font-medium whitespace-nowrap;
+    @apply text-memorial-textSecondary dark:text-memorialDark-textSecondary;
+    @apply rounded-memorial-lg rounded-b-none;
+    @apply hover:text-memorial-text dark:hover:text-memorialDark-text;
+    @apply hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt;
+    @apply transition-colors duration-200;
+  }
+
+  .account-tab-active {
+    @apply text-memorial-accent dark:text-memorialDark-accent;
+    @apply bg-memorial-surface dark:bg-memorialDark-surface;
+    @apply border border-memorial-borderLight dark:border-memorialDark-border;
+    @apply border-b-memorial-surface dark:border-b-memorialDark-surface;
+    @apply -mb-px;
+  }
+
+  .account-content {
+    @apply bg-memorial-surface dark:bg-memorialDark-surface;
+    @apply border border-memorial-borderLight dark:border-memorialDark-border;
+    @apply rounded-memorial-lg;
+    @apply p-6;
+  }
+
+  .account-form {
+    @apply space-y-6;
+  }
+
+  .account-avatar-section {
+    @apply flex items-center gap-6 pb-6;
+    @apply border-b border-memorial-borderLight dark:border-memorialDark-border;
+  }
+
+  .account-avatar {
+    @apply relative w-24 h-24 rounded-full flex-shrink-0;
+    @apply bg-memorial-accent dark:bg-memorialDark-accent;
+    @apply flex items-center justify-center;
+    @apply overflow-hidden;
+  }
+
+  .account-avatar-img {
+    @apply w-full h-full object-cover;
+  }
+
+  .account-avatar-placeholder {
+    @apply text-3xl font-semibold;
+    @apply text-white dark:text-memorialDark-bg;
+  }
+
+  .account-avatar-edit {
+    @apply absolute bottom-0 right-0;
+    @apply w-8 h-8 rounded-full;
+    @apply bg-memorial-surface dark:bg-memorialDark-surface;
+    @apply border-2 border-memorial-borderLight dark:border-memorialDark-border;
+    @apply flex items-center justify-center;
+    @apply text-memorial-textSecondary dark:text-memorialDark-textSecondary;
+    @apply hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt;
+    @apply cursor-pointer transition-colors duration-200;
+  }
+
+  .account-avatar-info {
+    @apply flex-1;
+  }
+
+  .account-form-grid {
+    @apply grid gap-6 md:grid-cols-2;
+  }
+
+  .account-form-field {
+    @apply flex flex-col gap-2;
+  }
+
+  .account-label {
+    @apply flex items-center gap-2;
+    @apply text-sm font-medium;
+    @apply text-memorial-text dark:text-memorialDark-text;
+  }
+
+  .account-field-hint {
+    @apply text-xs text-memorial-textTertiary dark:text-memorialDark-textTertiary;
+  }
+
+  .account-form-actions {
+    @apply pt-6;
+    @apply border-t border-memorial-borderLight dark:border-memorialDark-border;
+  }
+
+  .account-placeholder {
+    @apply flex flex-col items-center justify-center py-16 gap-4;
+    @apply text-center;
+  }
+
+  .account-placeholder h3 {
+    @apply text-lg font-medium text-memorial-text dark:text-memorialDark-text;
+  }
+
+  .account-placeholder p {
+    @apply text-memorial-textSecondary dark:text-memorialDark-textSecondary;
+  }
 }
 
 /* ===== UTILITIES LAYER ===== */

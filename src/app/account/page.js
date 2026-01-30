@@ -4,15 +4,19 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { User, Mail, Camera, Save, Shield, Bell, CreditCard } from 'lucide-react'
+import DashboardLayout from '@/components/DashboardLayout'
 
-export default function AccountPage() {
+function AccountContent() {
   const supabase = createClient()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [user, setUser] = useState(null)
   const [fullName, setFullName] = useState('')
   const [avatarUrl, setAvatarUrl] = useState(null)
   const [avatarFile, setAvatarFile] = useState(null)
+  const [activeTab, setActiveTab] = useState('profile')
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -35,7 +39,6 @@ export default function AccountPage() {
         .single()
 
       if (error && error.code !== 'PGRST116') {
-        toast.error('Could not fetch profile.')
         console.error(error)
       } else if (profile) {
         setFullName(profile.full_name || '')
@@ -54,8 +57,8 @@ export default function AccountPage() {
       return
     }
 
-    setLoading(true)
-    toast.loading('Saving profile...')
+    setSaving(true)
+    const loadingToast = toast.loading('Saving profile...')
 
     let publicAvatarUrl = avatarUrl
 
@@ -67,14 +70,13 @@ export default function AccountPage() {
         .upload(filePath, avatarFile, { upsert: true })
 
       if (uploadError) {
-        toast.dismiss()
+        toast.dismiss(loadingToast)
         toast.error(`Error uploading avatar: ${uploadError.message}`)
-        setLoading(false)
+        setSaving(false)
         return
       }
 
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
-
       publicAvatarUrl = `${urlData.publicUrl}?t=${new Date().getTime()}`
     }
 
@@ -87,7 +89,7 @@ export default function AccountPage() {
       })
       .select()
 
-    toast.dismiss()
+    toast.dismiss(loadingToast)
 
     if (profileError) {
       toast.error(`Error updating profile: ${profileError.message}`)
@@ -95,81 +97,177 @@ export default function AccountPage() {
       setAvatarUrl(publicAvatarUrl)
       toast.success('Profile updated successfully!')
     }
-    setLoading(false)
+    setSaving(false)
   }
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setAvatarFile(e.target.files[0])
+      // Preview the image
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setAvatarUrl(event.target.result)
+      }
+      reader.readAsDataURL(e.target.files[0])
     }
   }
 
+  const getInitials = (email) => {
+    if (!email) return 'U'
+    return email.charAt(0).toUpperCase()
+  }
+
+  const tabs = [
+    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'security', label: 'Security', icon: Shield },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'billing', label: 'Billing', icon: CreditCard },
+  ]
+
   if (loading) {
     return (
-      <div className="text-center py-16 text-light-textSecondary dark:text-dark-textSecondary">
-        Loading Account...
+      <div className="flex items-center justify-center py-16">
+        <div className="loading-spinner" />
       </div>
     )
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 py-16">
-      <h1 className="text-3xl font-semibold text-center mb-8">Your Account</h1>
-      <form
-        onSubmit={handleUpdateProfile}
-        className="bg-light-surface dark:bg-dark-surface p-8 rounded-2xl shadow-lg border border-light-border dark:border-dark-border"
-      >
-        {avatarUrl && (
-          <div className="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden bg-light-background dark:bg-dark-background">
-            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+    <div className="account-page">
+      {/* Page Header */}
+      <div className="account-header">
+        <h1 className="account-title">Account Settings</h1>
+        <p className="account-subtitle">Manage your profile and preferences</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="account-tabs">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`account-tab ${activeTab === tab.id ? 'account-tab-active' : ''}`}
+          >
+            <tab.icon size={18} />
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="account-content">
+        {activeTab === 'profile' && (
+          <form onSubmit={handleUpdateProfile} className="account-form">
+            {/* Avatar Section */}
+            <div className="account-avatar-section">
+              <div className="account-avatar">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Avatar" className="account-avatar-img" />
+                ) : (
+                  <span className="account-avatar-placeholder">
+                    {getInitials(user?.email)}
+                  </span>
+                )}
+                <label htmlFor="avatar-upload" className="account-avatar-edit">
+                  <Camera size={16} />
+                  <input
+                    type="file"
+                    id="avatar-upload"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+              <div className="account-avatar-info">
+                <h3 className="text-lg font-medium text-memorial-text dark:text-memorialDark-text">
+                  Profile Photo
+                </h3>
+                <p className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                  Click the camera icon to upload a new photo
+                </p>
+              </div>
+            </div>
+
+            {/* Form Fields */}
+            <div className="account-form-grid">
+              <div className="account-form-field">
+                <label htmlFor="email" className="account-label">
+                  <Mail size={16} />
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={user?.email || ''}
+                  className="input-memorial opacity-60 cursor-not-allowed"
+                  disabled
+                />
+                <p className="account-field-hint">Email cannot be changed</p>
+              </div>
+
+              <div className="account-form-field">
+                <label htmlFor="fullName" className="account-label">
+                  <User size={16} />
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  id="fullName"
+                  placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="input-memorial"
+                />
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="account-form-actions">
+              <button
+                type="submit"
+                disabled={saving}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                <Save size={18} />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {activeTab === 'security' && (
+          <div className="account-placeholder">
+            <Shield size={48} className="text-memorial-textTertiary dark:text-memorialDark-textTertiary" />
+            <h3>Security Settings</h3>
+            <p>Password and security options coming soon</p>
           </div>
         )}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1" htmlFor="email">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            value={user.email}
-            className="w-full p-2 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
-            disabled
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1" htmlFor="fullName">
-            Full Name
-          </label>
-          <input
-            type="text"
-            id="fullName"
-            placeholder="Your name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="w-full p-2 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
-          />
-        </div>
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-1" htmlFor="avatar">
-            Update Profile Picture
-          </label>
-          <input
-            type="file"
-            id="avatar"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:bg-light-primaryButton file:text-light-buttonText dark:file:bg-dark-primaryButton dark:file:text-dark-buttonText"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-light-primaryButton text-light-buttonText dark:bg-dark-primaryButton dark:text-dark-buttonText font-medium py-2.5 px-4 rounded-lg disabled:opacity-50"
-        >
-          {loading ? 'Saving...' : 'Save Profile'}
-        </button>
-      </form>
+
+        {activeTab === 'notifications' && (
+          <div className="account-placeholder">
+            <Bell size={48} className="text-memorial-textTertiary dark:text-memorialDark-textTertiary" />
+            <h3>Notification Preferences</h3>
+            <p>Email and push notification settings coming soon</p>
+          </div>
+        )}
+
+        {activeTab === 'billing' && (
+          <div className="account-placeholder">
+            <CreditCard size={48} className="text-memorial-textTertiary dark:text-memorialDark-textTertiary" />
+            <h3>Billing & Subscription</h3>
+            <p>Manage your subscription and payment methods coming soon</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
+export default function AccountPage() {
+  return (
+    <DashboardLayout>
+      <AccountContent />
+    </DashboardLayout>
+  )
+}
