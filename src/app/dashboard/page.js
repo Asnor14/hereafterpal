@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { motion } from 'framer-motion'
-import { Plus, Heart, Eye, Users } from 'lucide-react'
+import { Plus, Heart, Eye, MessageSquare, Image, Upload, Mail } from 'lucide-react'
 import DashboardLayout from '@/components/DashboardLayout'
+import WelcomeBanner from '@/components/WelcomeBanner'
+import QuickActionCard from '@/components/QuickActionCard'
 import MemorialCard from '@/components/MemorialCard'
 import StatsCard from '@/components/StatsCard'
+import ActivityFeed from '@/components/ActivityFeed'
 
 // Skeleton component for loading state
 function MemorialCardSkeleton() {
@@ -28,15 +30,25 @@ function MemorialCardSkeleton() {
   )
 }
 
+function SectionHeader({ title, action }) {
+  return (
+    <div className="section-header">
+      <h2 className="section-title">{title}</h2>
+      {action && <div className="section-action">{action}</div>}
+    </div>
+  )
+}
+
 function DashboardContent() {
   const supabase = createClient()
-  const router = useRouter()
   const [user, setUser] = useState(null)
   const [memorials, setMemorials] = useState([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     totalMemorials: 0,
-    totalVisitors: 0,
+    totalViews: 0,
+    totalMessages: 0,
+    totalPhotos: 0,
   })
 
   useEffect(() => {
@@ -61,7 +73,9 @@ function DashboardContent() {
         setMemorials(data || [])
         setStats({
           totalMemorials: data?.length || 0,
-          totalVisitors: 0, // Placeholder - would need analytics
+          totalViews: 0, // Placeholder
+          totalMessages: 0, // Placeholder
+          totalPhotos: 0, // Placeholder
         })
       }
       setLoading(false)
@@ -70,94 +84,124 @@ function DashboardContent() {
   }, [supabase])
 
   return (
-    <>
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-serif text-memorial-text dark:text-memorialDark-text">
-          Welcome Back
-        </h1>
-        <p className="text-memorial-textSecondary dark:text-memorialDark-textSecondary mt-1">
-          Manage your memorials and honor your loved ones.
-        </p>
+    <div className="dashboard-home">
+      {/* Welcome Banner */}
+      <WelcomeBanner user={user} memorialCount={stats.totalMemorials} />
+
+      {/* Quick Actions Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+        <QuickActionCard
+          icon={Plus}
+          title="Create Memorial"
+          description="Start a new tribute"
+          href="/create-memorial"
+          variant="primary"
+        />
+        <QuickActionCard
+          icon={Upload}
+          title="Add Photos"
+          description="Upload to Memory Lane"
+        />
+        <QuickActionCard
+          icon={Mail}
+          title="Invite Friends"
+          description="Share a memorial link"
+        />
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatsCard
           icon={Heart}
-          label="Total Memorials"
+          label="Memorials"
           value={loading ? '—' : stats.totalMemorials}
         />
         <StatsCard
           icon={Eye}
           label="Total Views"
-          value={loading ? '—' : stats.totalVisitors}
+          value={loading ? '—' : stats.totalViews}
         />
         <StatsCard
-          icon={Users}
-          label="Guestbook Messages"
-          value={loading ? '—' : '0'}
+          icon={MessageSquare}
+          label="Messages"
+          value={loading ? '—' : stats.totalMessages}
+        />
+        <StatsCard
+          icon={Image}
+          label="Photos"
+          value={loading ? '—' : stats.totalPhotos}
         />
       </div>
 
-      {/* Section Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text">
-          Your Memorials
-        </h2>
-        <Link href="/create-memorial" className="btn-primary flex items-center gap-2">
-          <Plus size={18} />
-          <span className="hidden sm:inline">Create Memorial</span>
-          <span className="sm:hidden">New</span>
-        </Link>
-      </div>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column - Memorials List */}
+        <div className="lg:col-span-2">
+          <SectionHeader
+            title="Your Memorials"
+            action={
+              <Link href="/create-memorial" className="btn-ghost text-sm py-2 px-4">
+                + Create New
+              </Link>
+            }
+          />
 
-      {/* Memorials Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <MemorialCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : memorials.length > 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {memorials.map((memorial, index) => (
+          {/* Memorials Grid */}
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+              {[1, 2].map((i) => (
+                <MemorialCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : memorials.length > 0 ? (
             <motion.div
-              key={memorial.id}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6"
+            >
+              {memorials.map((memorial, index) => (
+                <motion.div
+                  key={memorial.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <MemorialCard memorial={memorial} />
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              className="text-center py-12 memorial-card"
             >
-              <MemorialCard memorial={memorial} />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-memorial-accent/10 dark:bg-memorialDark-accent/10 flex items-center justify-center">
+                <Heart size={28} className="text-memorial-accent dark:text-memorialDark-accent" />
+              </div>
+              <h3 className="text-lg font-serif text-memorial-text dark:text-memorialDark-text mb-2">
+                No Memorials Yet
+              </h3>
+              <p className="text-memorial-textSecondary dark:text-memorialDark-textSecondary mb-6 max-w-sm mx-auto">
+                Create your first memorial to honor someone special.
+              </p>
+              <Link href="/create-memorial" className="btn-primary inline-flex items-center gap-2">
+                <Plus size={18} />
+                Create Your First Memorial
+              </Link>
             </motion.div>
-          ))}
-        </motion.div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-16 memorial-card"
-        >
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-memorial-accent/10 dark:bg-memorialDark-accent/10 flex items-center justify-center">
-            <Heart size={28} className="text-memorial-accent dark:text-memorialDark-accent" />
+          )}
+        </div>
+
+        {/* Right Column - Activity Feed */}
+        <div className="lg:col-span-1">
+          <SectionHeader title="Recent Activity" />
+          <div className="memorial-card p-4">
+            <ActivityFeed />
           </div>
-          <h3 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text mb-2">
-            No Memorials Yet
-          </h3>
-          <p className="text-memorial-textSecondary dark:text-memorialDark-textSecondary mb-6 max-w-sm mx-auto">
-            Create your first memorial to honor and celebrate the life of someone special.
-          </p>
-          <Link href="/create-memorial" className="btn-primary inline-flex items-center gap-2">
-            <Plus size={18} />
-            Create Your First Memorial
-          </Link>
-        </motion.div>
-      )}
-    </>
+        </div>
+      </div>
+    </div>
   )
 }
 

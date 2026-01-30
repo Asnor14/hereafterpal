@@ -44,6 +44,14 @@ module.exports = {
           accentLight: '#525252',     // Medium gray for hover
           accentDark: '#262626',      // Near black for active
           accentMuted: '#737373',     // Muted accent for subtle elements
+
+          // Sidebar-specific colors
+          sidebarBg: '#FFFFFF',
+          sidebarHover: '#F5F5F5',
+          sidebarActive: '#E5E5E5',
+          sidebarActiveBorder: '#404040',
+          sidebarText: '#525252',
+          sidebarActiveText: '#000000',
         },
 
         // ===== DARK MODE (Navy-based, not pure black) =====
@@ -68,6 +76,14 @@ module.exports = {
           accentLight: '#EDF2F7',     // Lighter for hover
           accentDark: '#A0AEC0',      // Medium gray for active
           accentMuted: '#718096',     // Muted accent
+
+          // Sidebar-specific colors
+          sidebarBg: '#141B2D',
+          sidebarHover: '#1E2640',
+          sidebarActive: '#2D3748',
+          sidebarActiveBorder: '#E2E8F0',
+          sidebarText: '#CBD5E0',
+          sidebarActiveText: '#FFFFFF',
         },
 
         // Legacy colors (updated for consistency)

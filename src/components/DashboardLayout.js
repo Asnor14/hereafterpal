@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabaseClient';
-import Sidebar from './Sidebar';
+import TopNav from './TopNav';
+import LeftSidebar from './LeftSidebar';
 import BottomNav from './BottomNav';
-import { Navbar } from './Navbar';
 import toast from 'react-hot-toast';
 
 export default function DashboardLayout({ children }) {
@@ -49,11 +49,24 @@ export default function DashboardLayout({ children }) {
         router.push('/');
     };
 
+    // Handle sidebar keyboard shortcut (Cmd/Ctrl + B)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+                e.preventDefault();
+                setSidebarOpen((prev) => !prev);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-memorial-bg dark:bg-memorialDark-bg">
                 <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-memorial-accent/30 border-t-memorial-accent dark:border-memorialDark-accent/30 dark:border-t-memorialDark-accent rounded-full animate-spin mx-auto" />
+                    <div className="loading-spinner" />
                     <p className="mt-4 text-memorial-textSecondary dark:text-memorialDark-textSecondary">
                         Loading...
                     </p>
@@ -63,27 +76,30 @@ export default function DashboardLayout({ children }) {
     }
 
     return (
-        <div className="min-h-screen bg-memorial-bg dark:bg-memorialDark-bg">
+        <div className="dashboard-wrapper">
             {/* Top Navigation */}
-            <Navbar
-                isDashboard={true}
+            <TopNav
                 user={user}
                 onSignOut={handleSignOut}
                 onMenuClick={() => setSidebarOpen(true)}
             />
 
-            {/* Sidebar */}
-            <Sidebar
-                isOpen={sidebarOpen}
-                onClose={() => setSidebarOpen(false)}
-            />
+            {/* Dashboard Container */}
+            <div className="dashboard-container">
+                {/* Left Sidebar */}
+                <LeftSidebar
+                    user={user}
+                    isOpen={sidebarOpen}
+                    onClose={() => setSidebarOpen(false)}
+                />
 
-            {/* Main Content */}
-            <main className="dashboard-container">
-                <div className="dashboard-content">
-                    {children}
-                </div>
-            </main>
+                {/* Main Content */}
+                <main className="main-content">
+                    <div className="content-inner">
+                        {children}
+                    </div>
+                </main>
+            </div>
 
             {/* Bottom Navigation (Mobile) */}
             <BottomNav />
