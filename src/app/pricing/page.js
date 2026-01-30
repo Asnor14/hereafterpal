@@ -1,6 +1,6 @@
 'use client'
 import { pricingPlans } from './data'
-import { Check } from 'lucide-react'
+import { Check, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 export default function PricingPage() {
   const [user, setUser] = useState(null)
   const [loadingPlan, setLoadingPlan] = useState(null)
+  const [billingCycle, setBillingCycle] = useState('monthly') // 'monthly' or 'annual'
   const supabase = createClient()
   const router = useRouter()
 
@@ -28,6 +29,11 @@ export default function PricingPage() {
       return
     }
 
+    if (planKey === 'free') {
+      router.push('/create-memorial')
+      return
+    }
+
     setLoadingPlan(planKey)
     const toastId = toast.loading('Redirecting to payment...')
 
@@ -35,14 +41,17 @@ export default function PricingPage() {
       const response = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: planKey, userId: user.id }),
+        body: JSON.stringify({
+          plan: planKey,
+          userId: user.id,
+          billingCycle,
+        }),
       })
-      
+
       const { checkoutUrl, error } = await response.json()
 
       if (error) throw new Error(error)
 
-      // Redirect to PayMongo
       window.location.href = checkoutUrl
 
     } catch (error) {
@@ -53,74 +62,149 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-16">
-      <motion.div
-        className="text-center mb-12"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="text-3xl font-semibold">Choose your pricing plan</h1>
-        <p className="text-lg mt-2 text-light-textSecondary dark:text-dark-textSecondary">
-          Select the plan that best honors your loved one's memory.
-        </p>
-      </motion.div>
+    <div className="min-h-screen bg-memorial-bg dark:bg-memorialDark-bg">
+      <div className="max-w-6xl mx-auto px-4 py-16 md:py-24">
+        {/* Header */}
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif text-memorial-text dark:text-memorialDark-text mb-4">
+            Choose Your Plan
+          </h1>
+          <p className="text-lg text-memorial-textSecondary dark:text-memorialDark-textSecondary max-w-2xl mx-auto">
+            Select the plan that best honors your loved one's memory. All plans include our core features.
+          </p>
+        </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {pricingPlans.map((plan, index) => (
-          <motion.div
-            key={plan.planName}
-            className={`relative flex flex-col bg-light-surface dark:bg-dark-surface rounded-2xl shadow-lg p-6 border ${
-              plan.isBestValue
-                ? 'border-amber-500'
-                : 'border-light-border dark:border-dark-border'
-            }`}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            {/* ... (rest of the plan UI is the same) ... */}
-            <h3 className="text-xl font-semibold mb-1">{plan.planName}</h3>
-            <p className="text-light-textSecondary dark:text-dark-textSecondary text-sm mb-4">
-              {plan.description}
-            </p>
-            <div className="mb-4">
-              <span className="text-4xl font-semibold">{plan.price}</span>
-              <span className="text-light-textSecondary dark:text-dark-textSecondary">
-                /{plan.frequency}
+        {/* Billing Toggle */}
+        <motion.div
+          className="flex justify-center mb-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="tab-nav">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`tab-item ${billingCycle === 'monthly' ? 'tab-item-active' : ''}`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle('annual')}
+              className={`tab-item ${billingCycle === 'annual' ? 'tab-item-active' : ''}`}
+            >
+              Annual
+              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                Save up to 30%
               </span>
-            </div>
-            <ul className="flex-grow space-y-2 mb-6">
-              {plan.features.map((feature) => (
-                <li key={feature} className="flex items-center gap-2 text-sm">
-                  <Check size={16} className="text-green-500 flex-shrink-0" />
-                  <span className="text-light-textSecondary dark:text-dark-textSecondary">
-                    {feature}
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          {pricingPlans.map((plan, index) => (
+            <motion.div
+              key={plan.planKey}
+              className={`pricing-card ${plan.isBestValue ? 'pricing-card-popular' : ''}`}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              {/* Badge */}
+              {plan.badge && (
+                <div className={`absolute -top-3 left-1/2 -translate-x-1/2 ${plan.isBestValue ? 'badge-popular' : 'badge-preview'}`}>
+                  {plan.isBestValue && <Sparkles size={12} className="mr-1" />}
+                  {plan.badge}
+                </div>
+              )}
+
+              {/* Plan Name */}
+              <div className="mb-4">
+                <h3 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text">
+                  {plan.icon && <span className="mr-2">{plan.icon}</span>}
+                  {plan.planName}
+                </h3>
+                {plan.subtitle && (
+                  <p className="text-sm text-memorial-textTertiary dark:text-memorialDark-textTertiary">
+                    {plan.subtitle}
+                  </p>
+                )}
+              </div>
+
+              {/* Price */}
+              <div className="mb-4">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold text-memorial-text dark:text-memorialDark-text">
+                    {billingCycle === 'annual' && plan.priceAnnual ? plan.priceAnnual : plan.price}
                   </span>
-                </li>
-              ))}
-            </ul>
-            
-            {/* --- NEW BUTTON LOGIC --- */}
-            {plan.planKey === 'free' ? (
-              <button
-                disabled
-                className="w-full bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border font-medium py-2 px-4 rounded-lg opacity-50"
-              >
-                Your Current Plan
-              </button>
-            ) : (
-              <button
-                onClick={() => handleSelectPlan(plan.planKey)}
-                disabled={loadingPlan === plan.planKey}
-                className="w-full bg-light-primaryButton text-light-buttonText dark:bg-dark-primaryButton dark:text-dark-buttonText font-medium py-2 px-4 rounded-lg transition-transform hover:scale-105 disabled:opacity-50"
-              >
-                {loadingPlan === plan.planKey ? 'Redirecting...' : 'Select Plan'}
-              </button>
-            )}
-          </motion.div>
-        ))}
+                  <span className="text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                    /{billingCycle === 'annual' && plan.frequencyAnnual ? plan.frequencyAnnual : plan.frequency}
+                  </span>
+                </div>
+                {billingCycle === 'annual' && plan.savings && (
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                    {plan.savings}
+                  </p>
+                )}
+              </div>
+
+              {/* Description */}
+              <p className="text-memorial-textSecondary dark:text-memorialDark-textSecondary text-sm mb-6">
+                {plan.description}
+              </p>
+
+              {/* Features */}
+              <ul className="flex-grow space-y-3 mb-8">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3 text-sm">
+                    <Check size={18} className="text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                      {feature}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* CTA Button */}
+              {plan.planKey === 'free' ? (
+                <button
+                  onClick={() => handleSelectPlan('free')}
+                  className="btn-ghost w-full"
+                >
+                  Start Free Preview
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleSelectPlan(plan.planKey)}
+                  disabled={loadingPlan === plan.planKey}
+                  className={`w-full ${plan.isBestValue ? 'btn-primary' : 'btn-ghost'}`}
+                >
+                  {loadingPlan === plan.planKey ? 'Redirecting...' : 'Get Started'}
+                </button>
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* FAQ Section */}
+        <motion.div
+          className="mt-16 md:mt-24 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <p className="text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+            Questions? Contact us at{' '}
+            <a href="mailto:support@hereafterpal.com" className="text-memorial-accent dark:text-memorialDark-accent underline">
+              support@hereafterpal.com
+            </a>
+          </p>
+        </motion.div>
       </div>
     </div>
   )
 }
-

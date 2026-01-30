@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { ThemeToggle } from './ThemeToggle'
-import { MessageSquareHeart, Menu, X, Home, Heart, Plus, User } from 'lucide-react'
+import ProfileDropdown from './ProfileDropdown'
+import { MessageSquareHeart, Menu, Search, Bell, X } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabaseClient'
@@ -10,12 +11,13 @@ import { useRouter, usePathname } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/context/AuthContext'
 
-export function Navbar() {
+export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuClick }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(propUser || null)
+  const [loading, setLoading] = useState(!propUser)
   const [mounted, setMounted] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [notificationCount] = useState(0) // UI only for now
   const supabase = createClient()
   const router = useRouter()
   const pathname = usePathname()
@@ -35,7 +37,7 @@ export function Navbar() {
   }, [])
 
   useEffect(() => {
-    if (!mounted) return
+    if (!mounted || propUser) return
 
     const getSession = async () => {
       const {
@@ -55,18 +57,30 @@ export function Navbar() {
     return () => {
       authListener.subscription.unsubscribe()
     }
-  }, [mounted, supabase])
+  }, [mounted, supabase, propUser])
+
+  // Update user from props
+  useEffect(() => {
+    if (propUser !== undefined) {
+      setUser(propUser)
+      setLoading(false)
+    }
+  }, [propUser])
 
   const closeMenu = () => setIsOpen(false)
 
   const handleSignOut = async () => {
     closeMenu()
-    const toastId = toast.loading('Signing out...')
-    await supabase.auth.signOut()
-    toast.dismiss(toastId)
-    toast.success('Signed out successfully!')
-    router.push('/')
-    router.refresh()
+    if (onSignOut) {
+      onSignOut()
+    } else {
+      const toastId = toast.loading('Signing out...')
+      await supabase.auth.signOut()
+      toast.dismiss(toastId)
+      toast.success('Signed out successfully!')
+      router.push('/')
+      router.refresh()
+    }
   }
 
   const navLinks = [
@@ -75,26 +89,76 @@ export function Navbar() {
     { href: '/pricing', label: 'Pricing' },
   ]
 
-  const userLinks = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/account', label: 'Account' },
-  ]
-
-  // Mobile bottom navigation items (Create is in hamburger menu)
-  const mobileNavItems = [
-    { href: '/', label: 'Home', icon: Home },
-    { href: '/dashboard', label: 'Memorials', icon: Heart, requiresAuth: true },
-    { href: '/account', label: 'Profile', icon: User, requiresAuth: true },
-  ]
-
   const isActive = (href) => pathname === href
 
+  // Dashboard navbar (simplified with search)
+  if (isDashboard) {
+    return (
+      <nav className="top-nav">
+        <div className="max-w-full mx-auto px-4 md:px-6 h-full">
+          <div className="flex justify-between items-center h-full">
+            {/* Left: Menu button (mobile) + Logo */}
+            <div className="flex items-center gap-3">
+              <button
+                className="md:hidden p-2 rounded-memorial hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt"
+                onClick={onMenuClick}
+                aria-label="Open menu"
+              >
+                <Menu size={24} />
+              </button>
+              <Link href="/dashboard" className="flex items-center gap-2">
+                <MessageSquareHeart size={28} className="text-memorial-accent dark:text-memorialDark-accent" />
+                <span className="font-serif font-semibold text-lg text-memorial-text dark:text-memorialDark-text hidden sm:block">
+                  <span className="decorative-letter">H</span>ereafter, <span className="decorative-letter">P</span>al
+                </span>
+              </Link>
+            </div>
+
+            {/* Center: Search Bar */}
+            <div className="hidden md:flex flex-1 justify-center px-8">
+              <div className="search-bar">
+                <Search size={18} className="text-memorial-textTertiary dark:text-memorialDark-textTertiary" />
+                <input
+                  type="text"
+                  placeholder="Search memorials..."
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            {/* Right: Notifications + Theme + Profile */}
+            <div className="flex items-center gap-2 md:gap-4">
+              {/* Mobile Search */}
+              <button className="md:hidden p-2 rounded-memorial hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt">
+                <Search size={20} />
+              </button>
+
+              {/* Notifications */}
+              <button className="relative p-2 rounded-memorial hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt">
+                <Bell size={20} />
+                {notificationCount > 0 && (
+                  <span className="notification-badge">{notificationCount}</span>
+                )}
+              </button>
+
+              <ThemeToggle />
+
+              {mounted && !loading && user && (
+                <ProfileDropdown user={user} onSignOut={handleSignOut} />
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+    )
+  }
+
+  // Public navbar (landing pages)
   return (
     <>
-      {/* Desktop & Tablet Navigation - Fixed Top */}
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-          ? 'bg-memorial-surface/95 dark:bg-memorialDark-surface/95 backdrop-blur-md shadow-memorial'
+          ? 'bg-memorial-surface/95 dark:bg-memorialDark-surface/95 backdrop-blur-md shadow-nav'
           : 'bg-memorial-bg/80 dark:bg-memorialDark-bg/80 backdrop-blur-sm'
           }`}
       >
@@ -104,7 +168,7 @@ export function Navbar() {
             <Link href="/" className="flex items-center gap-2" onClick={closeMenu}>
               <MessageSquareHeart size={28} className="text-memorial-accent dark:text-memorialDark-accent" />
               <span className="font-serif font-semibold text-xl text-memorial-text dark:text-memorialDark-text">
-                Hereafter, Pal
+                <span className="decorative-letter">H</span>ereafter, <span className="decorative-letter">P</span>al
               </span>
             </Link>
 
@@ -130,24 +194,13 @@ export function Navbar() {
               {mounted && !loading && (
                 user ? (
                   <div className="flex items-center gap-4">
-                    {userLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className={`text-sm font-medium transition-colors duration-200 ${isActive(link.href)
-                          ? 'text-memorial-accent dark:text-memorialDark-accent'
-                          : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text'
-                          }`}
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
-                    <button
-                      onClick={handleSignOut}
-                      className="text-sm font-medium text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-red-500 transition-colors duration-200"
+                    <Link
+                      href="/dashboard"
+                      className="text-sm font-medium text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text"
                     >
-                      Sign Out
-                    </button>
+                      Dashboard
+                    </Link>
+                    <ProfileDropdown user={user} onSignOut={handleSignOut} />
                   </div>
                 ) : (
                   <Link
@@ -202,19 +255,20 @@ export function Navbar() {
                 {mounted && !loading && (
                   user ? (
                     <>
-                      {userLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          className={`block px-4 py-3 rounded-memorial text-base font-medium ${isActive(link.href)
-                            ? 'bg-memorial-accent/10 text-memorial-accent dark:text-memorialDark-accent'
-                            : 'text-memorial-text dark:text-memorialDark-text hover:bg-memorial-bg dark:hover:bg-memorialDark-bg'
-                            }`}
-                          onClick={closeMenu}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
+                      <Link
+                        href="/dashboard"
+                        className="block px-4 py-3 rounded-memorial text-base font-medium text-memorial-text dark:text-memorialDark-text hover:bg-memorial-bg dark:hover:bg-memorialDark-bg"
+                        onClick={closeMenu}
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
+                        href="/account"
+                        className="block px-4 py-3 rounded-memorial text-base font-medium text-memorial-text dark:text-memorialDark-text hover:bg-memorial-bg dark:hover:bg-memorialDark-bg"
+                        onClick={closeMenu}
+                      >
+                        Account
+                      </Link>
                       <button
                         onClick={handleSignOut}
                         className="w-full text-left px-4 py-3 rounded-memorial text-base font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -238,70 +292,8 @@ export function Navbar() {
         </AnimatePresence>
       </nav>
 
-      {/* Mobile Bottom Tab Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-memorial-surface/95 dark:bg-memorialDark-surface/95 backdrop-blur-md border-t border-memorial-divider dark:border-memorialDark-divider safe-area-bottom">
-        <div className="grid grid-cols-3 h-14">
-          {mobileNavItems.map((item) => {
-            const Icon = item.icon
-            const active = isActive(item.href)
-
-            // Handle auth-required items
-            if (item.requiresAuth && (!mounted || loading)) {
-              return (
-                <div key={item.href} className="flex flex-col items-center justify-center gap-0.5 opacity-50">
-                  <Icon size={22} />
-                  <span className="text-[10px]">{item.label}</span>
-                </div>
-              )
-            }
-
-            if (item.requiresAuth && !user) {
-              return (
-                <Link
-                  key={item.href}
-                  href="/login"
-                  className="flex flex-col items-center justify-center gap-0.5 text-memorial-textSecondary dark:text-memorialDark-textSecondary"
-                >
-                  <Icon size={22} />
-                  <span className="text-[10px]">{item.label}</span>
-                </Link>
-              )
-            }
-
-            if (item.isCreate) {
-              return (
-                <button
-                  key={item.href}
-                  onClick={navigateToCreateMemorial}
-                  className={`flex flex-col items-center justify-center gap-0.5 ${active
-                    ? 'text-memorial-accent dark:text-memorialDark-accent'
-                    : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary'
-                    }`}
-                >
-                  <div className={`p-1.5 rounded-full ${active ? '' : 'bg-memorial-accent dark:bg-memorialDark-accent'}`}>
-                    <Icon size={20} className={active ? '' : 'text-white'} />
-                  </div>
-                  <span className="text-[10px]">{item.label}</span>
-                </button>
-              )
-            }
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center justify-center gap-0.5 ${active
-                  ? 'text-memorial-accent dark:text-memorialDark-accent'
-                  : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary'
-                  }`}
-              >
-                <Icon size={22} />
-                <span className="text-[10px]">{item.label}</span>
-              </Link>
-            )
-          })}
-        </div>
-      </nav>
+      {/* Spacer for fixed navbar on landing pages */}
+      <div className="h-16 md:h-[72px]" />
     </>
   )
 }

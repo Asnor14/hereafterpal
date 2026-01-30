@@ -5,14 +5,39 @@ import { createClient } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import { Plus, Pencil, Eye } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Plus, Heart, Eye, Users } from 'lucide-react'
+import DashboardLayout from '@/components/DashboardLayout'
+import MemorialCard from '@/components/MemorialCard'
+import StatsCard from '@/components/StatsCard'
 
-export default function DashboardPage() {
+// Skeleton component for loading state
+function MemorialCardSkeleton() {
+  return (
+    <div className="memorial-card overflow-hidden">
+      <div className="h-40 md:h-48 skeleton" />
+      <div className="p-4 space-y-3">
+        <div className="h-5 w-3/4 skeleton rounded" />
+        <div className="h-4 w-1/2 skeleton rounded" />
+        <div className="flex gap-2 mt-4">
+          <div className="flex-1 h-9 skeleton rounded" />
+          <div className="w-9 h-9 skeleton rounded" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DashboardContent() {
   const supabase = createClient()
   const router = useRouter()
   const [user, setUser] = useState(null)
   const [memorials, setMemorials] = useState([])
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    totalMemorials: 0,
+    totalVisitors: 0,
+  })
 
   useEffect(() => {
     const fetchUserAndMemorials = async () => {
@@ -20,8 +45,6 @@ export default function DashboardPage() {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) {
-        toast.error('You must be logged in.')
-        router.push('/login')
         return
       }
       setUser(user)
@@ -35,70 +58,113 @@ export default function DashboardPage() {
       if (error) {
         toast.error('Could not fetch memorials.')
       } else {
-        setMemorials(data)
+        setMemorials(data || [])
+        setStats({
+          totalMemorials: data?.length || 0,
+          totalVisitors: 0, // Placeholder - would need analytics
+        })
       }
       setLoading(false)
     }
     fetchUserAndMemorials()
-  }, [supabase, router])
-
-  if (loading) {
-    return <div className="text-center py-16">Loading Dashboard...</div>
-  }
+  }, [supabase])
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-16">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-semibold">Your Memorials</h1>
-        <Link
-          href="/create-memorial"
-          className="flex items-center gap-2 bg-light-primaryButton text-light-buttonText dark:bg-dark-primaryButton dark:text-dark-buttonText font-medium py-2 px-4 rounded-lg transition-transform hover:scale-105"
-        >
-          <Plus size={20} />
-          Create New
+    <>
+      {/* Page Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl md:text-3xl font-serif text-memorial-text dark:text-memorialDark-text">
+          Welcome Back
+        </h1>
+        <p className="text-memorial-textSecondary dark:text-memorialDark-textSecondary mt-1">
+          Manage your memorials and honor your loved ones.
+        </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <StatsCard
+          icon={Heart}
+          label="Total Memorials"
+          value={loading ? '—' : stats.totalMemorials}
+        />
+        <StatsCard
+          icon={Eye}
+          label="Total Views"
+          value={loading ? '—' : stats.totalVisitors}
+        />
+        <StatsCard
+          icon={Users}
+          label="Guestbook Messages"
+          value={loading ? '—' : '0'}
+        />
+      </div>
+
+      {/* Section Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text">
+          Your Memorials
+        </h2>
+        <Link href="/create-memorial" className="btn-primary flex items-center gap-2">
+          <Plus size={18} />
+          <span className="hidden sm:inline">Create Memorial</span>
+          <span className="sm:hidden">New</span>
         </Link>
       </div>
-      <div className="space-y-4">
-        {memorials.length > 0 ? (
-          memorials.map((memorial) => (
-            <div
+
+      {/* Memorials Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <MemorialCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : memorials.length > 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          {memorials.map((memorial, index) => (
+            <motion.div
               key={memorial.id}
-              className="bg-light-surface dark:bg-dark-surface p-4 rounded-2xl shadow-lg border border-light-border dark:border-dark-border flex justify-between items-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
             >
-              <div>
-                <h2 className="text-xl font-semibold">{memorial.name}</h2>
-                <p className="text-sm text-light-textSecondary dark:text-dark-textSecondary">
-                  {memorial.service_type === 'PAWS' ? 'Pet Memorial' : 'Human Memorial'}
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Link
-                  href={`/memorial/${memorial.id}/edit`}
-                  className="p-2 rounded-lg hover:bg-light-accent/10 dark:hover:bg-dark-accent/10 text-light-accent dark:text-dark-accent transition-colors"
-                  title="Edit Memorial"
-                >
-                  <Pencil size={20} />
-                </Link>
-                <Link
-                  href={`/memorial/${memorial.id}`}
-                  className="p-2 rounded-lg hover:bg-light-text/10 dark:hover:bg-dark-text/10 transition-colors"
-                  title="View Public Page"
-                >
-                  <Eye size={20} />
-                </Link>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="text-center py-12 bg-light-surface dark:bg-dark-surface rounded-2xl">
-            <h3 className="text-xl">You haven't created any memorials yet.</h3>
-            <p className="text-light-textSecondary dark:text-dark-textSecondary mt-2">
-              Click "Create New" to get started.
-            </p>
+              <MemorialCard memorial={memorial} />
+            </motion.div>
+          ))}
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-16 memorial-card"
+        >
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-memorial-accent/10 dark:bg-memorialDark-accent/10 flex items-center justify-center">
+            <Heart size={28} className="text-memorial-accent dark:text-memorialDark-accent" />
           </div>
-        )}
-      </div>
-    </div>
+          <h3 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text mb-2">
+            No Memorials Yet
+          </h3>
+          <p className="text-memorial-textSecondary dark:text-memorialDark-textSecondary mb-6 max-w-sm mx-auto">
+            Create your first memorial to honor and celebrate the life of someone special.
+          </p>
+          <Link href="/create-memorial" className="btn-primary inline-flex items-center gap-2">
+            <Plus size={18} />
+            Create Your First Memorial
+          </Link>
+        </motion.div>
+      )}
+    </>
   )
 }
 
+export default function DashboardPage() {
+  return (
+    <DashboardLayout>
+      <DashboardContent />
+    </DashboardLayout>
+  )
+}

@@ -158,7 +158,7 @@ export default function MemorialProfilePage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-memorial-bg dark:bg-memorialDark-bg">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-memorial-gold/30 border-t-memorial-gold dark:border-memorialDark-gold/30 dark:border-t-memorialDark-gold rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-12 h-12 border-4 border-memorial-accent/30 border-t-memorial-accent dark:border-memorialDark-accent/30 dark:border-t-memorialDark-accent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-memorial-textSecondary dark:text-memorialDark-textSecondary">
             Loading memorial...
           </p>
@@ -179,7 +179,7 @@ export default function MemorialProfilePage() {
           </p>
           <a
             href="/"
-            className="inline-block px-6 py-3 bg-memorial-gold dark:bg-memorialDark-gold text-white rounded-memorial hover:opacity-90 transition-opacity duration-200"
+            className="inline-block px-6 py-3 bg-memorial-accent dark:bg-memorialDark-accent text-white rounded-memorial hover:opacity-90 transition-opacity duration-200"
           >
             Return Home
           </a>
