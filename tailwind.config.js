@@ -19,71 +19,71 @@ module.exports = {
         poppins: ['var(--font-poppins)', 'sans-serif'],
       },
       colors: {
-        // ===== LIGHT MODE (White, Black, Gray Palette) =====
+        // ===== LIGHT MODE (Floral White, Smoky Black, Olive Drab, Bone) =====
         memorial: {
-          // Background Tones (Whites)
-          bg: '#FFFFFF',              // Pure white
-          surface: '#FAFAFA',         // Soft off-white
-          surfaceAlt: '#F5F5F5',      // Light gray surface
+          // Primary backgrounds
+          bg: '#FFFBF4',           // Floral White - main background
+          surface: '#FFFBF4',      // Floral White - card surfaces
+          surfaceAlt: '#D8CFBC',   // Bone - alternate surfaces
 
-          // Borders & Dividers (Grays)
-          borderLight: '#E5E5E5',     // Very light border
-          border: '#D4D4D4',          // Light gray border
-          divider: '#A3A3A3',         // Medium gray divider
+          // Sidebar specific
+          sidebarBg: '#11120D',           // Smoky Black
+          sidebarHover: '#1A1B16',        // Slightly lighter Smoky Black
+          sidebarActive: '#565449',       // Olive Drab
+          sidebarActiveBorder: '#D8CFBC', // Bone accent
+          sidebarText: '#D8CFBC',         // Bone text
+          sidebarActiveText: '#FFFBF4',   // Floral White active text
 
-          // Text Hierarchy (Black to Gray)
-          textTertiary: '#737373',    // Light gray text / captions
-          textSecondary: '#525252',   // Medium gray text
-          textMuted: '#404040',       // Dark gray text
-          text: '#262626',            // Near black text
-          textDark: '#171717',        // Dark text / emphasis
-          textBlack: '#000000',       // Pure black
+          // Text hierarchy
+          text: '#11120D',          // Smoky Black - primary text
+          textSecondary: '#565449', // Olive Drab - secondary text
+          textTertiary: '#7A7A6D',  // Muted olive - tertiary text
+          textMuted: '#565449',     // Olive Drab - muted text
+          textDark: '#11120D',      // Smoky Black - dark text
+          textBlack: '#11120D',     // Smoky Black - pure black
 
-          // Accent (Gray-based)
-          accent: '#404040',          // Dark gray accent
-          accentLight: '#525252',     // Medium gray for hover
-          accentDark: '#262626',      // Near black for active
-          accentMuted: '#737373',     // Muted accent for subtle elements
+          // Borders & dividers
+          border: '#D8CFBC',        // Bone
+          borderLight: '#E8E4D9',   // Lighter Bone
+          divider: '#D8CFBC',       // Bone
 
-          // Sidebar-specific colors
-          sidebarBg: '#FFFFFF',
-          sidebarHover: '#F5F5F5',
-          sidebarActive: '#E5E5E5',
-          sidebarActiveBorder: '#404040',
-          sidebarText: '#525252',
-          sidebarActiveText: '#000000',
+          // Accents
+          accent: '#565449',        // Olive Drab - primary accent
+          accentLight: '#6B6B5E',   // Lighter Olive
+          accentDark: '#3F3F36',    // Darker Olive
+          accentMuted: '#7A7A6D',   // Muted Olive
         },
 
-        // ===== DARK MODE (Navy-based, not pure black) =====
+        // ===== DARK MODE (Smoky Black, Olive Drab, Bone, Floral White) =====
         memorialDark: {
-          // Background Tones (Navy/Charcoal)
-          bg: '#0A0F1C',              // Deep navy (not pure black)
-          surface: '#141B2D',         // Navy surface
-          surfaceAlt: '#1E2640',      // Lighter navy surface
+          // Dark mode backgrounds
+          bg: '#11120D',            // Smoky Black
+          surface: '#1A1B16',       // Slightly lighter
+          surfaceAlt: '#24251F',    // Even lighter
 
-          // Borders & Dividers (Dark Blues)
-          border: '#2D3748',          // Dark blue-gray border
-          divider: '#4A5568',         // Medium blue-gray divider
+          // Sidebar (same as light mode for consistency)
+          sidebarBg: '#11120D',
+          sidebarHover: '#1A1B16',
+          sidebarActive: '#565449',
+          sidebarActiveBorder: '#D8CFBC',
+          sidebarText: '#D8CFBC',
+          sidebarActiveText: '#FFFBF4',
 
-          // Text Hierarchy (White to Gray)
-          textTertiary: '#A0AEC0',    // Blue-gray
-          textSecondary: '#CBD5E0',   // Light blue-gray
-          text: '#F5F5F5',            // Soft white text
-          textBright: '#FFFFFF',      // Pure white
+          // Text hierarchy (reversed)
+          text: '#FFFBF4',          // Floral White - primary text
+          textSecondary: '#D8CFBC', // Bone - secondary text
+          textTertiary: '#A39F92',  // Muted bone - tertiary text
+          textBright: '#FFFBF4',    // Floral White - bright text
 
-          // Accent (Light Gray-based)
-          accent: '#E2E8F0',          // Light gray accent
-          accentLight: '#EDF2F7',     // Lighter for hover
-          accentDark: '#A0AEC0',      // Medium gray for active
-          accentMuted: '#718096',     // Muted accent
+          // Borders & dividers
+          border: '#3F3F36',        // Dark Olive
+          divider: '#2C2C24',       // Darker divider
 
-          // Sidebar-specific colors
-          sidebarBg: '#141B2D',
-          sidebarHover: '#1E2640',
-          sidebarActive: '#2D3748',
-          sidebarActiveBorder: '#E2E8F0',
-          sidebarText: '#CBD5E0',
-          sidebarActiveText: '#FFFFFF',
+          // Accents
+          accent: '#D8CFBC',        // Bone - primary accent
+          accentLight: '#E8E4D9',   // Lighter Bone
+          accentDark: '#A39F92',    // Darker Bone
+          accentMuted: '#7A7A6D',   // Muted accent
         },
 
         // Legacy colors (updated for consistency)

@@ -7,6 +7,8 @@ import Swal from 'sweetalert2'
 import { Upload, X, AlertCircle, Check, ImagePlus, Mic, Play, Pause, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { CldUploadButton, CldImage } from 'next-cloudinary'
+import DashboardLayout from '@/components/DashboardLayout'
+import toast from 'react-hot-toast'
 
 // Mood options for AI Voice
 const MOOD_OPTIONS = [
@@ -404,8 +406,9 @@ export default function CreateMemorialPage() {
   `
 
   return (
-    <div className="min-h-screen bg-memorial-bg dark:bg-memorialDark-bg py-8 md:py-12">
-      <div className="max-w-2xl mx-auto px-4">
+    <DashboardLayout>
+      <div className="min-h-screen bg-memorial-bg dark:bg-memorialDark-bg py-8 md:py-12">
+        <div className="max-w-2xl mx-auto px-4">
         {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -876,7 +879,8 @@ export default function CreateMemorialPage() {
             </button>
           </div>
         </motion.form>
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   )
 }

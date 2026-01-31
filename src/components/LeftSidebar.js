@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Home,
     Plus,
     Heart,
     Image,
@@ -19,7 +18,6 @@ import {
 
 // Navigation items configuration
 const mainNavItems = [
-    { href: '/dashboard', label: 'Home', icon: Home },
     { href: '/dashboard', label: 'Memorials', icon: Heart, badge: null },
     { href: '/create-memorial', label: 'Create Memorial', icon: Plus, highlight: true },
 ];
@@ -45,7 +43,7 @@ function SidebarSection({ title, children }) {
     );
 }
 
-function SidebarItem({ href, label, icon: Icon, badge, highlight, disabled, active, onClick }) {
+function SidebarItem({ href, label, icon: Icon, badge, highlight, disabled, active, onClose }) {
     const content = (
         <>
             <Icon size={20} className="sidebar-item-icon" />
@@ -56,6 +54,13 @@ function SidebarItem({ href, label, icon: Icon, badge, highlight, disabled, acti
 
     const className = `sidebar-item ${active ? 'sidebar-item-active' : ''} ${highlight ? 'sidebar-item-highlight' : ''} ${disabled ? 'sidebar-item-disabled' : ''}`;
 
+    const handleClick = () => {
+        // Only close sidebar on mobile (when onClose is provided and sidebar is open)
+        if (onClose && typeof window !== 'undefined' && window.innerWidth < 768) {
+            onClose();
+        }
+    };
+
     if (disabled) {
         return (
             <div className={className} title="Coming soon">
@@ -65,7 +70,7 @@ function SidebarItem({ href, label, icon: Icon, badge, highlight, disabled, acti
     }
 
     return (
-        <Link href={href} className={className} onClick={onClick}>
+        <Link href={href} className={className} onClick={handleClick}>
             {content}
         </Link>
     );
@@ -90,13 +95,14 @@ function UserCard({ user }) {
     );
 }
 
-export default function LeftSidebar({ user, isOpen, onClose }) {
+function LeftSidebar({ user, isOpen, onClose }) {
     const pathname = usePathname();
 
     const isActive = (href, label) => {
         if (label === 'Memorials' && pathname === '/dashboard') return true;
-        if (label === 'Home' && pathname === '/dashboard') return true;
         if (href !== '/dashboard' && pathname.startsWith(href)) return true;
+        // Handle edit route - should highlight "Memorials" when editing
+        if (label === 'Memorials' && pathname.includes('/memorial/') && pathname.includes('/edit')) return true;
         return false;
     };
 
@@ -200,3 +206,6 @@ export default function LeftSidebar({ user, isOpen, onClose }) {
         </>
     );
 }
+
+// Memoize the sidebar to prevent unnecessary re-renders on navigation
+export default memo(LeftSidebar);

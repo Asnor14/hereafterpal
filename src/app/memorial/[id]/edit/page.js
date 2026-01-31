@@ -6,6 +6,7 @@ import { CldUploadButton, CldImage } from 'next-cloudinary'
 import toast from 'react-hot-toast'
 import { Trash, Check } from 'lucide-react'
 import Link from 'next/link'
+import DashboardLayout from '@/components/DashboardLayout'
 
 export default function EditMemorialPage() {
   const [memorial, setMemorial] = useState(null)
@@ -155,39 +156,47 @@ export default function EditMemorialPage() {
   }
 
   if (loading) {
-    return <div className="text-center py-16">Loading Editor...</div>
+    return (
+      <DashboardLayout>
+        <div className="text-center py-16 text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+          <div className="loading-spinner mx-auto mb-4" />
+          <p>Loading Editor...</p>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   const isPaidUser = subscription && subscription.plan !== 'free'
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-16">
-      <h1 className="text-3xl font-semibold mb-2">Edit: {memorial.name}</h1>
-      <Link href={`/memorial/${memorial.id}`} className="text-light-accent dark:text-dark-accent underline mb-8 block">
-        View Public Page
-      </Link>
+    <DashboardLayout>
+      <div className="w-full max-w-5xl mx-auto">
+        <h1 className="text-3xl font-serif font-semibold mb-2 text-memorial-text dark:text-memorialDark-text">Edit: {memorial.name}</h1>
+        <Link href={`/memorial/${memorial.id}`} className="text-memorial-accent dark:text-memorialDark-accent underline mb-8 block hover:opacity-80 transition-opacity">
+          View Public Page
+        </Link>
 
-      {/* --- Tab Navigation --- */}
-      <div className="flex border-b border-light-border dark:border-dark-border mb-8">
-        <button onClick={() => setTab('bio')} className={`py-2 px-4 ${tab === 'bio' ? 'border-b-2 border-light-accent dark:border-dark-accent font-semibold' : 'text-light-textSecondary dark:text-dark-textSecondary'}`}>
-          Bio & Settings
-        </button>
-        <button onClick={() => setTab('gallery')} className={`py-2 px-4 ${tab === 'gallery' ? 'border-b-2 border-light-accent dark:border-dark-accent font-semibold' : 'text-light-textSecondary dark:text-dark-textSecondary'}`}>
-          Memory Lane
-        </button>
-        <button onClick={() => setTab('letters')} className={`py-2 px-4 ${tab === 'letters' ? 'border-b-2 border-light-accent dark:border-dark-accent font-semibold' : 'text-light-textSecondary dark:text-dark-textSecondary'}`}>
-          Letters of Love
-        </button>
-      </div>
+        {/* --- Tab Navigation --- */}
+        <div className="flex border-b border-memorial-border dark:border-memorialDark-border mb-8">
+          <button onClick={() => setTab('bio')} className={`py-2 px-4 ${tab === 'bio' ? 'border-b-2 border-memorial-accent dark:border-memorialDark-accent font-semibold text-memorial-text dark:text-memorialDark-text' : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors'}`}>
+            Bio & Settings
+          </button>
+          <button onClick={() => setTab('gallery')} className={`py-2 px-4 ${tab === 'gallery' ? 'border-b-2 border-memorial-accent dark:border-memorialDark-accent font-semibold text-memorial-text dark:text-memorialDark-text' : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors'}`}>
+            Memory Lane
+          </button>
+          <button onClick={() => setTab('letters')} className={`py-2 px-4 ${tab === 'letters' ? 'border-b-2 border-memorial-accent dark:border-memorialDark-accent font-semibold text-memorial-text dark:text-memorialDark-text' : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors'}`}>
+            Letters of Love
+          </button>
+        </div>
 
-      {/* --- Tab Content --- */}
-      <div className="bg-light-surface dark:bg-dark-surface p-6 rounded-2xl shadow-lg border border-light-border dark:border-dark-border">
+        {/* --- Tab Content --- */}
+        <div className="bg-memorial-surface dark:bg-memorialDark-surface p-6 rounded-memorial-lg shadow-memorial border border-memorial-border dark:border-memorialDark-border">
 
         {/* === TAB 1: Bio & Settings === */}
         {tab === 'bio' && (
           <form onSubmit={handleUpdateBio} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="bio">
+              <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="bio">
                 Biography or Tribute
               </label>
               <textarea
@@ -195,18 +204,18 @@ export default function EditMemorialPage() {
                 rows={10}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                className="w-full p-2 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
+                className="input-memorial w-full"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="visibility">
+              <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="visibility">
                 Memorial Visibility
               </label>
               <select
                 id="visibility"
                 value={visibility}
                 onChange={(e) => setVisibility(e.target.value)}
-                className="w-full p-2 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
+                className="select-memorial w-full"
               >
                 <option value="private">Private (Only you can see)</option>
                 <option value="public" disabled={!isPaidUser}>
@@ -215,14 +224,14 @@ export default function EditMemorialPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="gender">
+              <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="gender">
                 Gender
               </label>
               <select
                 id="gender"
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
-                className="w-full p-2 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
+                className="select-memorial w-full"
               >
                 <option value="female">Female</option>
                 <option value="male">Male</option>
@@ -230,7 +239,7 @@ export default function EditMemorialPage() {
             </div>
             <button
               type="submit"
-              className="w-full bg-light-primaryButton text-light-buttonText dark:bg-dark-primaryButton dark:text-dark-buttonText font-medium py-2 px-4 rounded-lg"
+              className="btn-primary w-full"
             >
               Save Changes
             </button>
@@ -244,15 +253,15 @@ export default function EditMemorialPage() {
               cloudName={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}
               uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
               onSuccess={handleUploadSuccess}
-              className="w-full bg-light-primaryButton text-light-buttonText dark:bg-dark-primaryButton dark:text-dark-buttonText font-medium py-2 px-4 rounded-lg mb-6"
+              className="btn-primary w-full mb-6"
             />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {photos.map((photo) => (
-                <div key={photo.id} className="relative rounded-lg overflow-hidden shadow-lg">
-                  <CldImage width="300" height="300" src={photo.image_url} alt="photo" />
+                <div key={photo.id} className="relative rounded-memorial overflow-hidden shadow-memorial">
+                  <CldImage width="300" height="300" src={photo.image_url} alt="photo" className="w-full h-full object-cover" />
                   <button
                     onClick={() => handleDeletePhoto(photo.id)}
-                    className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full"
+                    className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 transition-colors"
                   >
                     <Trash size={14} />
                   </button>
@@ -266,22 +275,25 @@ export default function EditMemorialPage() {
         {tab === 'letters' && (
           <div className="space-y-4">
             {letters.length > 0 ? letters.map((letter) => (
-              <div key={letter.id} className="flex justify-between items-center bg-light-background dark:bg-dark-background p-3 rounded-lg">
-                <div>
-                  <p>{letter.message}</p>
-                  <span className="text-sm text-light-textSecondary dark:text-dark-textSecondary">- {letter.author_name}</span>
+              <div key={letter.id} className="flex justify-between items-center bg-memorial-bg dark:bg-memorialDark-bg p-4 rounded-memorial border border-memorial-border dark:border-memorialDark-border">
+                <div className="flex-1">
+                  <p className="text-memorial-text dark:text-memorialDark-text mb-1">{letter.message}</p>
+                  <span className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">- {letter.author_name}</span>
                 </div>
                 <button
                   onClick={() => handleDeleteLetter(letter.id)}
-                  className="bg-red-600 text-white p-2 rounded-lg"
+                  className="bg-red-600 text-white p-2 rounded-memorial hover:bg-red-700 transition-colors ml-4"
                 >
                   <Trash size={16} />
                 </button>
               </div>
-            )) : <p>No letters yet.</p>}
+            )) : (
+              <p className="text-memorial-textSecondary dark:text-memorialDark-textSecondary text-center py-8">No letters yet.</p>
+            )}
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </DashboardLayout>
   )
 }
