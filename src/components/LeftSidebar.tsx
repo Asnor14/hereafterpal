@@ -131,11 +131,10 @@ function UserCard({ user, plan }: { user: any, plan: string | null }) {
     );
 }
 
-function LeftSidebar({ user }: { user: any }) {
+function LeftSidebar({ user, isOpen, onClose }: { user: any, isOpen: boolean, onClose: () => void }) {
     const pathname = usePathname();
     const [userPlan, setUserPlan] = useState<string | null>(null);
     const [memorialCount, setMemorialCount] = useState<number>(0);
-    const [isMobileOpen, setIsMobileOpen] = useState(false);
 
     // Fetch user plan and memorial count
     useEffect(() => {
@@ -181,8 +180,8 @@ function LeftSidebar({ user }: { user: any }) {
         return pathname === path || pathname.startsWith(`${path}/`);
     };
 
-    const toggleMobileSidebar = () => setIsMobileOpen(!isMobileOpen);
-    const closeMobileSidebar = () => setIsMobileOpen(false);
+    const toggleMobileSidebar = () => isOpen ? onClose() : null;
+    const closeMobileSidebar = onClose;
 
     // Calculate Limits
     const memorialLimit = getMemorialLimit(userPlan);
@@ -283,14 +282,14 @@ function LeftSidebar({ user }: { user: any }) {
 
             {/* Mobile Sidebar - Drawer */}
             <AnimatePresence>
-                {isMobileOpen && (
+                {isOpen && (
                     <>
                         {/* Backdrop */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            onClick={closeMobileSidebar}
+                            onClick={onClose}
                             className="fixed inset-0 bg-black/50 z-40 md:hidden"
                         />
 
@@ -303,13 +302,13 @@ function LeftSidebar({ user }: { user: any }) {
                             className="fixed top-0 left-0 w-64 h-full bg-memorial-surface dark:bg-memorialDark-surface z-50 overflow-y-auto flex flex-col md:hidden border-r border-memorial-border dark:border-memorialDark-border"
                         >
                             <div className="p-4 flex items-center justify-between border-b border-memorial-border dark:border-memorialDark-border">
-                                <Link href="/dashboard" onClick={closeMobileSidebar}>
+                                <Link href="/dashboard" onClick={onClose}>
                                     <h1 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text tracking-tight">
                                         HereAfter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
                                     </h1>
                                 </Link>
                                 <button
-                                    onClick={closeMobileSidebar}
+                                    onClick={onClose}
                                     className="p-1 rounded-md hover:bg-memorial-bg dark:hover:bg-memorialDark-bg text-memorial-textSecondary dark:text-memorialDark-textSecondary"
                                 >
                                     <X size={24} />
@@ -325,25 +324,6 @@ function LeftSidebar({ user }: { user: any }) {
                     </>
                 )}
             </AnimatePresence>
-
-            {/* Mobile Trigger Button (visible when sidebar is closed) */}
-            <div className="md:hidden fixed top-0 left-0 w-full bg-memorial-surface dark:bg-memorialDark-surface border-b border-memorial-border dark:border-memorialDark-border z-30 px-4 py-3 flex items-center justify-between">
-                <Link href="/dashboard" className="text-xl font-serif font-bold text-memorial-text dark:text-memorialDark-text">
-                    HereAfter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
-                </Link>
-                <button
-                    onClick={toggleMobileSidebar}
-                    className="p-2 text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:bg-memorial-bg dark:hover:bg-memorialDark-bg rounded-md"
-                >
-                    {isMobileOpen ? <X size={24} /> : (
-                        <div className="space-y-1.5">
-                            <span className="block w-6 h-0.5 bg-current"></span>
-                            <span className="block w-6 h-0.5 bg-current"></span>
-                            <span className="block w-6 h-0.5 bg-current"></span>
-                        </div>
-                    )}
-                </button>
-            </div>
         </>
     );
 }

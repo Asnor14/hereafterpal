@@ -27,7 +27,7 @@ export default function TopNav({ user, onSignOut, onMenuClick }) {
                 {/* Left Section */}
                 <div className="top-nav-left">
                     <button
-                        className="menu-toggle"
+                        className="menu-toggle relative z-[60] cursor-pointer"
                         onClick={onMenuClick}
                         aria-label="Open menu"
                     >
