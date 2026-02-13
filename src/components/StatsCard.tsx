@@ -1,6 +1,15 @@
 'use client';
 
-export default function StatsCard({ icon: Icon, label, value, trend }) {
+import type { ElementType } from 'react';
+
+interface StatsCardProps {
+    icon: ElementType;
+    label: string;
+    value: string | number;
+    trend?: number;
+}
+
+export default function StatsCard({ icon: Icon, label, value, trend }: StatsCardProps) {
     return (
         <div className="stats-card">
             {/* Icon */}

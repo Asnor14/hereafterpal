@@ -6,11 +6,11 @@ import { createClient } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
+import type { User } from '@supabase/supabase-js'
 
 export default function PricingPage() {
-  const [user, setUser] = useState(null)
-  const [loadingPlan, setLoadingPlan] = useState(null)
-  const [billingCycle, setBillingCycle] = useState('monthly') // 'monthly' or 'annual'
+  const [user, setUser] = useState<User | null>(null)
+  const [billingCycle, setBillingCycle] = useState('monthly')
   const supabase = createClient()
   const router = useRouter()
 
@@ -22,43 +22,14 @@ export default function PricingPage() {
     getUser()
   }, [supabase])
 
-  const handleSelectPlan = async (planKey) => {
+  const handleSelectPlan = async (planKey: string) => {
     if (!user) {
       toast.error('Please log in to select a plan.')
       router.push('/login')
       return
     }
 
-    if (planKey === 'free') {
-      router.push('/create-memorial')
-      return
-    }
-
-    setLoadingPlan(planKey)
-    const toastId = toast.loading('Redirecting to payment...')
-
-    try {
-      const response = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          plan: planKey,
-          userId: user.id,
-          billingCycle,
-        }),
-      })
-
-      const { checkoutUrl, error } = await response.json()
-
-      if (error) throw new Error(error)
-
-      window.location.href = checkoutUrl
-
-    } catch (error) {
-      toast.dismiss(toastId)
-      toast.error(error.message)
-      setLoadingPlan(null)
-    }
+    router.push('/create-memorial')
   }
 
   return (
@@ -180,10 +151,9 @@ export default function PricingPage() {
               ) : (
                 <button
                   onClick={() => handleSelectPlan(plan.planKey)}
-                  disabled={loadingPlan === plan.planKey}
                   className={`w-full ${plan.isBestValue ? 'btn-primary' : 'btn-ghost'}`}
                 >
-                  {loadingPlan === plan.planKey ? 'Redirecting...' : 'Get Started'}
+                  Get Started
                 </button>
               )}
             </motion.div>

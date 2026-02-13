@@ -10,7 +10,7 @@ export default function Timeline({ milestones }) {
 
     // Sort milestones by date
     const sortedMilestones = [...milestones].sort((a, b) => {
-        return new Date(a.date) - new Date(b.date);
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
     const formatDate = (date) => {

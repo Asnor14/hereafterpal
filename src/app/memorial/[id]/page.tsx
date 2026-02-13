@@ -9,13 +9,13 @@ import MemoryLane from '@/components/memorial/MemoryLane';
 
 
 import Guestbook from '@/components/memorial/Guestbook';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabaseClient';
 import toast from 'react-hot-toast';
 
 export default function MemorialProfilePage() {
   const params = useParams();
   const memorialId = params?.id;
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const [memorial, setMemorial] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -207,7 +207,7 @@ export default function MemorialProfilePage() {
     if (memorial.date_of_passing) {
       const passingDate = new Date(memorial.date_of_passing);
       const age = memorial.date_of_birth
-        ? Math.floor((passingDate - new Date(memorial.date_of_birth)) / (365.25 * 24 * 60 * 60 * 1000))
+        ? Math.floor((passingDate.getTime() - new Date(memorial.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
         : null;
 
       milestones.push({
@@ -262,7 +262,7 @@ export default function MemorialProfilePage() {
         {/* Guestbook Section */}
         <section id="guestbook" className="py-12 md:py-16 scroll-mt-20">
           <h2 className="text-3xl md:text-4xl font-serif text-memorial-text dark:text-memorialDark-text mb-8 md:mb-12 text-center">
-            Book of Memories
+            Letters of Love
           </h2>
           <div className="max-w-4xl mx-auto">
             <Guestbook

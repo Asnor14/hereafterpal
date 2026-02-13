@@ -6,16 +6,17 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { User, Mail, Camera, Save, Shield, Bell, CreditCard } from 'lucide-react'
 import DashboardLayout from '@/components/DashboardLayout'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 function AccountContent() {
   const supabase = createClient()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
   const [fullName, setFullName] = useState('')
-  const [avatarUrl, setAvatarUrl] = useState(null)
-  const [avatarFile, setAvatarFile] = useState(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [activeTab, setActiveTab] = useState('profile')
 
   useEffect(() => {
@@ -49,7 +50,7 @@ function AccountContent() {
     fetchProfile()
   }, [supabase, router])
 
-  const handleUpdateProfile = async (e) => {
+  const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!user) {
@@ -100,19 +101,18 @@ function AccountContent() {
     setSaving(false)
   }
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setAvatarFile(e.target.files[0])
-      // Preview the image
       const reader = new FileReader()
       reader.onload = (event) => {
-        setAvatarUrl(event.target.result)
+        setAvatarUrl(event.target?.result as string)
       }
       reader.readAsDataURL(e.target.files[0])
     }
   }
 
-  const getInitials = (email) => {
+  const getInitials = (email: string | undefined) => {
     if (!email) return 'U'
     return email.charAt(0).toUpperCase()
   }

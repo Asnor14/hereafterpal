@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, X } from 'lucide-react';
 
-export default function SearchBar({ onSearch }) {
+export default function SearchBar({ onSearch }: { onSearch?: (query: string) => void } = {}) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [query, setQuery] = useState('');
     const [recentSearches] = useState([

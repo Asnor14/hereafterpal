@@ -1,4 +1,20 @@
-export const pricingPlans = [
+export interface PricingPlan {
+  planKey: string
+  planName: string
+  subtitle?: string
+  price: string
+  priceAnnual?: string
+  frequency: string
+  frequencyAnnual?: string
+  description: string
+  features: string[]
+  badge: string | null
+  isBestValue: boolean
+  savings?: string
+  icon?: string
+}
+
+export const pricingPlans: PricingPlan[] = [
   {
     planKey: 'free',
     planName: 'Free Trial',

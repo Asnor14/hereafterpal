@@ -36,7 +36,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleAuthAction = async (e) => {
+  const handleAuthAction = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     const operation = isSignUp ? 'Signing Up...' : 'Signing In...'
@@ -77,7 +77,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       toast.dismiss(loadingToast)
-      toast.error(`Error: ${error.message}`)
+      toast.error(`Error: ${(error as Error).message}`)
     } finally {
       setLoading(false)
     }

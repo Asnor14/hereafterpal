@@ -43,6 +43,7 @@ export default function CreateMemorialPage() {
   const [deathYear, setDeathYear] = useState('')
 
   // AI Voice Tribute state
+  const [voiceType, setVoiceType] = useState('ai-voice') // 'ai-voice' or 'clone-voice'
   const [voiceMessage, setVoiceMessage] = useState('')
   const [voiceMood, setVoiceMood] = useState('longing')
   const [generatedAudioUrl, setGeneratedAudioUrl] = useState(null)
@@ -50,8 +51,12 @@ export default function CreateMemorialPage() {
   const [voiceProgress, setVoiceProgress] = useState(0)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
 
+  // Clone Voice state (frontend only for now)
+  const [cloneVoiceAudio, setCloneVoiceAudio] = useState(null)
+  const [cloneVoiceText, setCloneVoiceText] = useState('')
+
   // Validation errors
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState<Record<string, string | null>>({})
 
   // Character count for bio
   const maxBioLength = 5000
@@ -234,7 +239,7 @@ export default function CreateMemorialPage() {
 
   // Validate form
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors: Record<string, string | null> = {}
 
     if (!name.trim()) {
       newErrors.name = 'Please enter a name (required)'
@@ -389,8 +394,8 @@ export default function CreateMemorialPage() {
     bg-memorial-bg dark:bg-memorialDark-bg 
     border ${hasError ? 'border-red-500' : 'border-memorial-border dark:border-memorialDark-border'}
     text-memorial-text dark:text-memorialDark-text
-    focus:border-memorial-gold dark:focus:border-memorialDark-gold 
-    focus:ring-2 focus:ring-memorial-gold/20
+    focus:border-memorial-accent dark:focus:border-memorialDark-accent 
+    focus:ring-2 focus:ring-memorial-accent/20 dark:focus:ring-memorialDark-accent/20
     transition-colors duration-200
     min-h-touch text-base
   `
@@ -400,15 +405,14 @@ export default function CreateMemorialPage() {
     bg-memorial-bg dark:bg-memorialDark-bg 
     border ${hasError ? 'border-red-500' : 'border-memorial-border dark:border-memorialDark-border'}
     text-memorial-text dark:text-memorialDark-text
-    focus:border-memorial-gold dark:focus:border-memorialDark-gold 
+    focus:border-memorial-accent dark:focus:border-memorialDark-accent 
     transition-colors duration-200
     min-h-touch text-base appearance-none
   `
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-memorial-bg dark:bg-memorialDark-bg py-8 md:py-12">
-        <div className="max-w-2xl mx-auto px-4">
+      <div className="w-full max-w-2xl mx-auto">
         {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -440,7 +444,7 @@ export default function CreateMemorialPage() {
 
             <div className="flex flex-col items-center gap-4">
               <div
-                className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 ${errors.image ? 'border-red-500' : 'border-memorial-gold/30 dark:border-memorialDark-gold/30'
+                className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 ${errors.image ? 'border-red-500' : 'border-memorial-accent/30 dark:border-memorialDark-accent/30'
                   } bg-memorial-bg dark:bg-memorialDark-bg flex items-center justify-center`}
               >
                 {imagePublicId ? (
@@ -473,7 +477,7 @@ export default function CreateMemorialPage() {
               <CldUploadButton
                 uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
                 onSuccess={handleUploadSuccess}
-                className="px-6 py-3 rounded-memorial bg-memorial-gold dark:bg-memorialDark-gold text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2 min-h-touch"
+                className="px-6 py-3 rounded-memorial bg-memorial-accent dark:bg-memorialDark-accent text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2 min-h-touch"
               >
                 <Upload size={18} />
                 {imagePublicId ? 'Change Photo' : 'Upload Photo'}
@@ -629,7 +633,7 @@ export default function CreateMemorialPage() {
               </p>
             )}
             {age !== null && age >= 0 && (
-              <p className="text-sm text-memorial-gold dark:text-memorialDark-gold flex items-center gap-1">
+              <p className="text-sm text-memorial-accent dark:text-memorialDark-accent flex items-center gap-1">
                 <Check size={14} />
                 Lived {age} year{age !== 1 ? 's' : ''}
               </p>
@@ -665,7 +669,7 @@ export default function CreateMemorialPage() {
                   Share stories and special moments that made them unique.
                 </p>
               )}
-              <span className={`text-sm ${bioLength < minBioLength ? 'text-memorial-textSecondary' : 'text-memorial-gold'}`}>
+              <span className={`text-sm ${bioLength < minBioLength ? 'text-memorial-textSecondary' : 'text-memorial-accent'}`}>
                 {bioLength} / {maxBioLength}
               </span>
             </div>
@@ -693,14 +697,14 @@ export default function CreateMemorialPage() {
               Visibility <span className="text-red-500">*</span>
             </label>
             <div className="space-y-3">
-              <label className="flex items-start gap-3 p-4 rounded-memorial border border-memorial-border dark:border-memorialDark-border cursor-pointer hover:border-memorial-gold dark:hover:border-memorialDark-gold transition-colors">
+              <label className="flex items-start gap-3 p-4 rounded-memorial border border-memorial-border dark:border-memorialDark-border cursor-pointer hover:border-memorial-accent dark:hover:border-memorialDark-accent transition-colors">
                 <input
                   type="radio"
                   name="visibility"
                   value="public"
                   checked={visibility === 'public'}
                   onChange={(e) => setVisibility(e.target.value)}
-                  className="mt-0.5 w-4 h-4 text-memorial-gold focus:ring-memorial-gold"
+                  className="mt-0.5 w-4 h-4 text-memorial-accent focus:ring-memorial-accent dark:focus:ring-memorialDark-accent"
                 />
                 <div>
                   <span className="block font-medium text-memorial-text dark:text-memorialDark-text">Public</span>
@@ -709,14 +713,14 @@ export default function CreateMemorialPage() {
                   </span>
                 </div>
               </label>
-              <label className="flex items-start gap-3 p-4 rounded-memorial border border-memorial-border dark:border-memorialDark-border cursor-pointer hover:border-memorial-gold dark:hover:border-memorialDark-gold transition-colors">
+              <label className="flex items-start gap-3 p-4 rounded-memorial border border-memorial-border dark:border-memorialDark-border cursor-pointer hover:border-memorial-accent dark:hover:border-memorialDark-accent transition-colors">
                 <input
                   type="radio"
                   name="visibility"
                   value="private"
                   checked={visibility === 'private'}
                   onChange={(e) => setVisibility(e.target.value)}
-                  className="mt-0.5 w-4 h-4 text-memorial-gold focus:ring-memorial-gold"
+                  className="mt-0.5 w-4 h-4 text-memorial-accent focus:ring-memorial-accent dark:focus:ring-memorialDark-accent"
                 />
                 <div>
                   <span className="block font-medium text-memorial-text dark:text-memorialDark-text">Private</span>
@@ -728,14 +732,14 @@ export default function CreateMemorialPage() {
             </div>
           </div>
 
-          {/* AI Voice Tribute Section */}
+          {/* Voice Tribute Section */}
           <div className="space-y-4 pt-6 border-t border-memorial-divider dark:border-memorialDark-divider">
             <div className="flex items-center gap-2">
-              <Mic size={20} className="text-memorial-gold dark:text-memorialDark-gold" />
+              <Mic size={20} className="text-memorial-accent dark:text-memorialDark-accent" />
               <h3 className="text-lg font-serif text-memorial-text dark:text-memorialDark-text">
-                AI Voice Tribute
+                Voice Tribute
               </h3>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-memorial-gold/10 text-memorial-gold dark:bg-memorialDark-gold/10 dark:text-memorialDark-gold">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-memorial-accent/10 text-memorial-accent dark:bg-memorialDark-accent/10 dark:text-memorialDark-accent">
                 Optional
               </span>
             </div>
@@ -743,67 +747,194 @@ export default function CreateMemorialPage() {
               Create a personalized voice message that will play on the memorial page.
             </p>
 
-            {/* Voice Message Textarea */}
+            {/* Voice Type Selector */}
             <div className="space-y-2">
-              <label htmlFor="voiceMessage" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
-                Voice Message Script
-              </label>
-              <textarea
-                id="voiceMessage"
-                value={voiceMessage}
-                onChange={(e) => {
-                  if (e.target.value.length <= 5000) {
-                    setVoiceMessage(e.target.value)
-                  }
-                }}
-                rows={4}
-                className={`${inputClasses(false)} resize-y min-h-[100px]`}
-                placeholder="Write the message you want the AI voice to read... (e.g., 'We remember you for your kindness, your laugh, and the love you shared with everyone around you.')"
-              />
-              <div className="flex justify-between">
-                <p className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary">
-                  This will be converted to an AI-generated voice.
-                </p>
-                <span className="text-xs text-memorial-textSecondary">{voiceMessage.length} / 5000</span>
-              </div>
-            </div>
-
-            {/* Mood Selector */}
-            <div className="space-y-2">
-              <label htmlFor="voiceMood" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
-                Voice Mood
+              <label htmlFor="voiceType" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
+                Voice Type
               </label>
               <select
-                id="voiceMood"
-                value={voiceMood}
-                onChange={(e) => setVoiceMood(e.target.value)}
+                id="voiceType"
+                value={voiceType}
+                onChange={(e) => {
+                  setVoiceType(e.target.value)
+                  // Reset generated audio when switching types
+                  setGeneratedAudioUrl(null)
+                  setCloneVoiceAudio(null)
+                }}
                 className={`w-full ${selectClasses(false)}`}
               >
-                {MOOD_OPTIONS.map(mood => (
-                  <option key={mood.value} value={mood.value}>{mood.label}</option>
-                ))}
+                <option value="ai-voice">AI Voice Tribute</option>
+                <option value="clone-voice">Clone Voice</option>
               </select>
+              <p className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                {voiceType === 'ai-voice'
+                  ? 'Generate a voice using AI based on the text you provide.'
+                  : 'Upload a sample of your loved one\'s voice to clone it.'}
+              </p>
             </div>
 
-            {/* Generate Button */}
-            <button
-              type="button"
-              onClick={handleGenerateVoice}
-              disabled={isGeneratingVoice || !voiceMessage.trim()}
-              className="w-full px-6 py-3 rounded-memorial bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt border border-memorial-gold dark:border-memorialDark-gold text-memorial-gold dark:text-memorialDark-gold font-medium hover:bg-memorial-gold/10 dark:hover:bg-memorialDark-gold/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 min-h-touch"
-            >
-              {isGeneratingVoice ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Generating Voice...
-                </>
-              ) : (
-                <>
+            {/* AI Voice Mode */}
+            {voiceType === 'ai-voice' && (
+              <>
+                {/* Voice Message Textarea */}
+                <div className="space-y-2">
+                  <label htmlFor="voiceMessage" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
+                    Voice Message Script
+                  </label>
+                  <textarea
+                    id="voiceMessage"
+                    value={voiceMessage}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 5000) {
+                        setVoiceMessage(e.target.value)
+                      }
+                    }}
+                    rows={4}
+                    className={`${inputClasses(false)} resize-y min-h-[100px]`}
+                    placeholder="Write the message you want the AI voice to read... (e.g., 'We remember you for your kindness, your laugh, and the love you shared with everyone around you.')"
+                  />
+                  <div className="flex justify-between">
+                    <p className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                      This will be converted to an AI-generated voice.
+                    </p>
+                    <span className="text-xs text-memorial-textSecondary">{voiceMessage.length} / 5000</span>
+                  </div>
+                </div>
+
+                {/* Mood Selector */}
+                <div className="space-y-2">
+                  <label htmlFor="voiceMood" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
+                    Voice Mood
+                  </label>
+                  <select
+                    id="voiceMood"
+                    value={voiceMood}
+                    onChange={(e) => setVoiceMood(e.target.value)}
+                    className={`w-full ${selectClasses(false)}`}
+                  >
+                    {MOOD_OPTIONS.map(mood => (
+                      <option key={mood.value} value={mood.value}>{mood.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Generate Button */}
+                <button
+                  type="button"
+                  onClick={handleGenerateVoice}
+                  disabled={isGeneratingVoice || !voiceMessage.trim()}
+                  className="w-full px-6 py-3 rounded-memorial bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt border border-memorial-accent dark:border-memorialDark-accent text-memorial-accent dark:text-memorialDark-accent font-medium hover:bg-memorial-accent/10 dark:hover:bg-memorialDark-accent/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 min-h-touch"
+                >
+                  {isGeneratingVoice ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Generating Voice...
+                    </>
+                  ) : (
+                    <>
+                      <Mic size={18} />
+                      Generate AI Voice
+                    </>
+                  )}
+                </button>
+              </>
+            )}
+
+            {/* Clone Voice Mode */}
+            {voiceType === 'clone-voice' && (
+              <>
+                {/* Voice Sample Upload */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
+                    Voice Sample
+                  </label>
+                  <div className="p-4 rounded-memorial border-2 border-dashed border-memorial-border dark:border-memorialDark-border bg-memorial-bg dark:bg-memorialDark-bg">
+                    {cloneVoiceAudio ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-memorial-accent/10 dark:bg-memorialDark-accent/10 flex items-center justify-center">
+                          <Mic size={18} className="text-memorial-accent dark:text-memorialDark-accent" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-memorial-text dark:text-memorialDark-text">
+                            {cloneVoiceAudio.name}
+                          </p>
+                          <p className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                            Voice sample uploaded
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setCloneVoiceAudio(null)}
+                          className="p-2 text-memorial-textTertiary hover:text-red-500 transition-colors"
+                        >
+                          <X size={18} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center gap-2 cursor-pointer py-4">
+                        <Upload size={24} className="text-memorial-textTertiary dark:text-memorialDark-textTertiary" />
+                        <span className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                          Click to upload a voice sample
+                        </span>
+                        <span className="text-xs text-memorial-textTertiary dark:text-memorialDark-textTertiary">
+                          MP3, WAV, or M4A (max 10MB)
+                        </span>
+                        <input
+                          type="file"
+                          accept="audio/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) setCloneVoiceAudio(file)
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                  <p className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                    Upload a clear audio recording of your loved one speaking (at least 30 seconds recommended).
+                  </p>
+                </div>
+
+                {/* Text for Clone Voice */}
+                <div className="space-y-2">
+                  <label htmlFor="cloneVoiceText" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
+                    Message to Speak
+                  </label>
+                  <textarea
+                    id="cloneVoiceText"
+                    value={cloneVoiceText}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 5000) {
+                        setCloneVoiceText(e.target.value)
+                      }
+                    }}
+                    rows={4}
+                    className={`${inputClasses(false)} resize-y min-h-[100px]`}
+                    placeholder="Write the message you want the cloned voice to say..."
+                  />
+                  <div className="flex justify-between">
+                    <p className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                      This text will be spoken in your loved one's voice.
+                    </p>
+                    <span className="text-xs text-memorial-textSecondary">{cloneVoiceText.length} / 5000</span>
+                  </div>
+                </div>
+
+                {/* Clone Voice Button (Frontend only - Coming Soon) */}
+                <button
+                  type="button"
+                  disabled={true}
+                  className="w-full px-6 py-3 rounded-memorial bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt border border-memorial-border dark:border-memorialDark-border text-memorial-textSecondary dark:text-memorialDark-textSecondary font-medium opacity-50 cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 min-h-touch"
+                >
                   <Mic size={18} />
-                  Generate AI Voice
-                </>
-              )}
-            </button>
+                  Clone Voice (Coming Soon)
+                </button>
+                <p className="text-xs text-center text-memorial-textTertiary dark:text-memorialDark-textTertiary">
+                  Voice cloning feature is currently in development. Stay tuned!
+                </p>
+              </>
+            )}
 
             {/* Progress Bar */}
             {isGeneratingVoice && (
@@ -814,7 +945,7 @@ export default function CreateMemorialPage() {
                 </div>
                 <div className="w-full h-2 bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-memorial-gold to-memorial-gold/70 dark:from-memorialDark-gold dark:to-memorialDark-gold/70 transition-all duration-300 ease-out"
+                    className="h-full bg-gradient-to-r from-memorial-accent to-memorial-accent/70 dark:from-memorialDark-accent dark:to-memorialDark-accent/70 transition-all duration-300 ease-out"
                     style={{ width: `${voiceProgress}%` }}
                   />
                 </div>
@@ -823,12 +954,12 @@ export default function CreateMemorialPage() {
 
             {/* Audio Preview */}
             {generatedAudioUrl && (
-              <div className="p-4 rounded-memorial bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt border border-memorial-gold/30 dark:border-memorialDark-gold/30">
+              <div className="p-4 rounded-memorial bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt border border-memorial-accent/30 dark:border-memorialDark-accent/30">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={toggleAudioPlayback}
-                    className="w-12 h-12 rounded-full bg-memorial-gold dark:bg-memorialDark-gold text-white flex items-center justify-center hover:opacity-90 transition-opacity"
+                    className="w-12 h-12 rounded-full bg-memorial-accent dark:bg-memorialDark-accent text-white flex items-center justify-center hover:opacity-90 transition-opacity"
                   >
                     {isPlayingAudio ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
                   </button>
@@ -866,7 +997,7 @@ export default function CreateMemorialPage() {
             <button
               type="submit"
               disabled={loading || isGeneratingVoice}
-              className="w-full sm:flex-1 px-6 py-3 rounded-memorial bg-memorial-gold dark:bg-memorialDark-gold text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium min-h-touch flex items-center justify-center gap-2"
+              className="w-full sm:flex-1 px-6 py-3 rounded-memorial bg-memorial-accent dark:bg-memorialDark-accent text-white dark:text-memorialDark-bg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium min-h-touch flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -879,7 +1010,6 @@ export default function CreateMemorialPage() {
             </button>
           </div>
         </motion.form>
-        </div>
       </div>
     </DashboardLayout>
   )

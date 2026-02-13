@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,11 +14,13 @@ import {
     HelpCircle,
     CreditCard,
     X,
+    Home,
 } from 'lucide-react';
 
 // Navigation items configuration
 const mainNavItems = [
-    { href: '/dashboard', label: 'Memorials', icon: Heart, badge: null },
+    { href: '/dashboard', label: 'Home', icon: Home, badge: null },
+    { href: '/memorials', label: 'Memorials', icon: Heart, badge: null },
     { href: '/create-memorial', label: 'Create Memorial', icon: Plus, highlight: true },
 ];
 
@@ -43,7 +45,7 @@ function SidebarSection({ title, children }) {
     );
 }
 
-function SidebarItem({ href, label, icon: Icon, badge, highlight, disabled, active, onClose }) {
+function SidebarItem({ href, label, icon: Icon, badge, highlight, disabled = false, active, onClose }: { href: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; badge?: string | null; highlight?: boolean; disabled?: boolean; active: boolean; onClose?: () => void }) {
     const content = (
         <>
             <Icon size={20} className="sidebar-item-icon" />
@@ -99,10 +101,13 @@ function LeftSidebar({ user, isOpen, onClose }) {
     const pathname = usePathname();
 
     const isActive = (href, label) => {
-        if (label === 'Memorials' && pathname === '/dashboard') return true;
-        if (href !== '/dashboard' && pathname.startsWith(href)) return true;
-        // Handle edit route - should highlight "Memorials" when editing
+        // Home is active only on /dashboard
+        if (label === 'Home' && pathname === '/dashboard') return true;
+        // Memorials is active on /memorials or when viewing/editing a memorial
+        if (label === 'Memorials' && pathname === '/memorials') return true;
         if (label === 'Memorials' && pathname.includes('/memorial/') && pathname.includes('/edit')) return true;
+        // Other items
+        if (href !== '/dashboard' && href !== '/memorials' && pathname.startsWith(href)) return true;
         return false;
     };
 
@@ -121,7 +126,7 @@ function LeftSidebar({ user, isOpen, onClose }) {
                             key={item.label}
                             {...item}
                             active={isActive(item.href, item.label)}
-                            onClick={onClose}
+                            onClose={onClose}
                         />
                     ))}
                 </div>
@@ -132,7 +137,7 @@ function LeftSidebar({ user, isOpen, onClose }) {
                             key={item.label}
                             {...item}
                             active={isActive(item.href, item.label)}
-                            onClick={onClose}
+                            onClose={onClose}
                         />
                     ))}
                 </SidebarSection>
@@ -143,7 +148,7 @@ function LeftSidebar({ user, isOpen, onClose }) {
                             key={item.label}
                             {...item}
                             active={isActive(item.href, item.label)}
-                            onClick={onClose}
+                            onClose={onClose}
                         />
                     ))}
                 </SidebarSection>

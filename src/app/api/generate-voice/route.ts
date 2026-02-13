@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Minimax Voice IDs based on gender and age
 // Using actual numeric IDs from ai33pro (corrected sequence)
-const VOICE_MAP = {
+const VOICE_MAP: Record<string, Record<string, string>> = {
     female: {
         child: '236835177529409',    // Using Female Young as fallback for child
         young: '236835177529409',
@@ -20,8 +20,8 @@ const VOICE_MAP = {
 const DEFAULT_VOICE_ID = '226893671006276';
 
 // Determine age category
-function getAgeCategory(age) {
-    const numAge = parseInt(age);
+function getAgeCategory(age: string | number): string {
+    const numAge = parseInt(String(age));
     if (isNaN(numAge)) return 'middle'; // Default
 
     if (numAge < 13) return 'child';
@@ -31,7 +31,7 @@ function getAgeCategory(age) {
 }
 
 // Get voice ID based on gender and age
-function getVoiceId(gender, age) {
+function getVoiceId(gender: string, age: string | number): string {
     const ageCategory = getAgeCategory(age);
     // Normalize gender string
     const normGender = gender?.toLowerCase() === 'male' ? 'male' : 'female';
@@ -41,7 +41,7 @@ function getVoiceId(gender, age) {
 }
 
 // Poll for task completion
-async function pollTaskStatus(taskId, apiKey, maxAttempts = 30, delayMs = 2000) {
+async function pollTaskStatus(taskId: string, apiKey: string, maxAttempts = 30, delayMs = 2000) {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         const response = await fetch(`https://api.ai33.pro/v1/task/${taskId}`, {
             method: 'GET',
@@ -72,7 +72,7 @@ async function pollTaskStatus(taskId, apiKey, maxAttempts = 30, delayMs = 2000) 
     throw new Error('Voice generation timed out');
 }
 
-export async function POST(request) {
+export async function POST(request: NextRequest) {
     try {
         const { text, mood, gender, age } = await request.json();
 
@@ -198,7 +198,7 @@ export async function POST(request) {
     } catch (error) {
         console.error('Voice generation error:', error);
         return NextResponse.json(
-            { error: error.message || 'An unexpected error occurred. Please try again.' },
+            { error: (error as Error).message || 'An unexpected error occurred. Please try again.' },
             { status: 500 }
         );
     }

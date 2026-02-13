@@ -5,6 +5,7 @@ import { Navbar } from '@/components/Navbar'
 import { Footer } from '@/components/Footer'
 import { ToastProvider } from '@/components/ToastProvider'
 import { AuthProvider } from '@/context/AuthContext'
+import type { Metadata } from 'next'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -12,12 +13,12 @@ const poppins = Poppins({
   variable: '--font-poppins',
 })
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Hereafter, Pal',
   description: 'A digital memorial service.',
 }
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={poppins.variable} suppressHydrationWarning>
       <body className="font-poppins">

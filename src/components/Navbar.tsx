@@ -11,7 +11,16 @@ import { useRouter, usePathname } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/context/AuthContext'
 
-export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuClick }) {
+import { type User } from '@supabase/supabase-js'
+
+interface NavbarProps {
+  isDashboard?: boolean
+  user?: User | null
+  onSignOut?: () => void
+  onMenuClick?: () => void
+}
+
+export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuClick }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [user, setUser] = useState(propUser || null)
   const [loading, setLoading] = useState(!propUser)
@@ -114,24 +123,8 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
               </Link>
             </div>
 
-            {/* Center: Search Bar */}
-            <div className="hidden md:flex flex-1 justify-center px-8">
-              <div className="search-bar">
-                <Search size={18} className="text-memorial-textTertiary dark:text-memorialDark-textTertiary" />
-                <input
-                  type="text"
-                  placeholder="Search memorials..."
-                  className="flex-1"
-                />
-              </div>
-            </div>
-
             {/* Right: Notifications + Theme + Profile */}
             <div className="flex items-center gap-2 md:gap-4">
-              {/* Mobile Search */}
-              <button className="md:hidden p-2 rounded-memorial hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt">
-                <Search size={20} />
-              </button>
 
               {/* Notifications */}
               <button className="relative p-2 rounded-memorial hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt">

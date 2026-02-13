@@ -7,9 +7,10 @@ import TopNav from './TopNav';
 import LeftSidebar from './LeftSidebar';
 import BottomNav from './BottomNav';
 import toast from 'react-hot-toast';
+import type { User } from '@supabase/supabase-js';
 
-export default function DashboardLayout({ children }) {
-    const [user, setUser] = useState(null);
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+    const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const supabase = createClient();
@@ -49,9 +50,18 @@ export default function DashboardLayout({ children }) {
         router.push('/');
     };
 
+    // Force dark mode for dashboard
+    useEffect(() => {
+        document.documentElement.classList.add('dark');
+        return () => {
+            // Optionally remove on unmount if needed
+            // document.documentElement.classList.remove('dark');
+        };
+    }, []);
+
     // Handle sidebar keyboard shortcut (Cmd/Ctrl + B)
     useEffect(() => {
-        const handleKeyDown = (e) => {
+        const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
                 e.preventDefault();
                 setSidebarOpen((prev) => !prev);

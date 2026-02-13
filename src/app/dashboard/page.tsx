@@ -12,6 +12,7 @@ import QuickActionCard from '@/components/QuickActionCard'
 import MemorialCard from '@/components/MemorialCard'
 import StatsCard from '@/components/StatsCard'
 import ActivityFeed from '@/components/ActivityFeed'
+import type { User } from '@supabase/supabase-js'
 
 // Skeleton component for loading state
 function MemorialCardSkeleton() {
@@ -30,7 +31,7 @@ function MemorialCardSkeleton() {
   )
 }
 
-function SectionHeader({ title, action }) {
+function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
   return (
     <div className="section-header">
       <h2 className="section-title">{title}</h2>
@@ -41,8 +42,8 @@ function SectionHeader({ title, action }) {
 
 function DashboardContent() {
   const supabase = createClient()
-  const [user, setUser] = useState(null)
-  const [memorials, setMemorials] = useState([])
+  const [user, setUser] = useState<User | null>(null)
+  const [memorials, setMemorials] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     totalMemorials: 0,
@@ -137,14 +138,7 @@ function DashboardContent() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Memorials List */}
         <div className="lg:col-span-2">
-          <SectionHeader
-            title="Your Memorials"
-            action={
-              <Link href="/create-memorial" className="btn-ghost text-sm py-2 px-4">
-                + Create New
-              </Link>
-            }
-          />
+          <SectionHeader title="Your Memorials" />
 
           {/* Memorials Grid */}
           {loading ? (
@@ -166,7 +160,13 @@ function DashboardContent() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <MemorialCard memorial={memorial} />
+                  <MemorialCard
+                    memorial={memorial}
+                    onDelete={(id) => {
+                      setMemorials(prev => prev.filter(m => m.id !== id));
+                      setStats(prev => ({ ...prev, totalMemorials: prev.totalMemorials - 1 }));
+                    }}
+                  />
                 </motion.div>
               ))}
             </motion.div>
@@ -197,7 +197,7 @@ function DashboardContent() {
         <div className="lg:col-span-1">
           <SectionHeader title="Recent Activity" />
           <div className="memorial-card p-4">
-            <ActivityFeed />
+            <ActivityFeed memorialIds={memorials.map(m => m.id)} />
           </div>
         </div>
       </div>

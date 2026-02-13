@@ -576,6 +576,22 @@
     @apply min-h-screen bg-memorial-bg dark:bg-memorialDark-bg;
   }
 
+  /* Force dark mode for dashboard pages */
+  .dashboard-wrapper.dark,
+  .dashboard-wrapper.dark * {
+    color-scheme: dark;
+  }
+
+  .dashboard-wrapper.dark {
+    background-color: #11120D !important;
+    /* Smoky Black */
+  }
+
+  .dashboard-wrapper.dark .main-content {
+    background-color: #11120D !important;
+    /* Smoky Black */
+  }
+
   .dashboard-container {
     @apply flex min-h-[calc(100vh-64px)];
     @apply pt-nav;
@@ -583,21 +599,25 @@
 
   .main-content {
     @apply flex-1;
-    @apply md:ml-sidebar;
-    @apply p-4 md:p-6;
+    @apply pt-4 md:pt-6;
+    @apply px-4 md:px-6;
     @apply pb-20 md:pb-6;
     /* Bottom nav padding on mobile */
   }
 
   .content-inner {
     @apply max-w-dashboard mx-auto;
+    @apply px-4 md:px-6;
+    /* Content inner handles horizontal padding for centering */
   }
 
   /* Dashboard Main Content Area - for dynamic content switching */
   .dashboard-main-content {
-    margin-left: 240px; /* sidebar width */
+    margin-left: 240px;
+    /* sidebar width */
     padding: 2rem;
-    min-height: calc(100vh - 64px); /* subtract nav height */
+    min-height: calc(100vh - 64px);
+    /* subtract nav height */
     transition: margin-left 0.3s ease;
   }
 

@@ -18,11 +18,8 @@ export default function WelcomeBanner({ user, memorialCount = 0 }) {
                 </p>
             </div>
             <div className="welcome-actions">
-                <Link href="/create-memorial" className="btn-primary">
-                    Create Memorial
-                </Link>
                 {memorialCount > 0 && (
-                    <Link href="/dashboard" className="btn-ghost">
+                    <Link href="/memorials" className="btn-ghost">
                         View All
                     </Link>
                 )}

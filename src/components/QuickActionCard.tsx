@@ -2,8 +2,17 @@
 
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import type { ElementType } from 'react';
 
-export default function QuickActionCard({ icon: Icon, title, description, href, variant = 'default' }) {
+interface QuickActionCardProps {
+    icon: ElementType;
+    title: string;
+    description: string;
+    href?: string;
+    variant?: string;
+}
+
+export default function QuickActionCard({ icon: Icon, title, description, href, variant = 'default' }: QuickActionCardProps) {
     const content = (
         <>
             <div className={`quick-action-icon ${variant === 'primary' ? 'quick-action-icon-primary' : ''}`}>

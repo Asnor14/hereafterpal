@@ -250,8 +250,7 @@ export default function EditMemorialPage() {
         {tab === 'gallery' && (
           <div>
             <CldUploadButton
-              cloudName={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}
-              uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+              uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? ''}
               onSuccess={handleUploadSuccess}
               className="btn-primary w-full mb-6"
             />

@@ -1,9 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const pathname = usePathname();
+
+  // Hide footer on dashboard pages
+  const dashboardRoutes = ['/dashboard', '/create-memorial', '/account', '/pricing', '/memorial'];
+  const isDashboardPage = dashboardRoutes.some(route => pathname?.startsWith(route));
+
+  if (isDashboardPage) {
+    return null;
+  }
 
   return (
     <footer className="border-t border-memorial-borderLight dark:border-memorialDark-border bg-memorial-surface dark:bg-memorialDark-surface mt-16">
