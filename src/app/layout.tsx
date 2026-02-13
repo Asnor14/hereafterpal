@@ -1,36 +1,36 @@
-import './globals.css'
-import { Poppins } from 'next/font/google'
+import './globals.css';
+import { playfair, inter } from './fonts';
 import { ThemeProvider } from './theme-provider'
-import { Navbar } from '@/components/Navbar'
-import { Footer } from '@/components/Footer'
-import { ToastProvider } from '@/components/ToastProvider'
-import { AuthProvider } from '@/context/AuthContext'
-import type { Metadata } from 'next'
-
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-poppins',
-})
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
+import { ToastProvider } from '@/components/ToastProvider';
+import { AuthProvider } from '@/context/AuthContext';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Hereafter, Pal',
-  description: 'A digital memorial service.',
-}
+  title: 'HereAfter, Pal - Eternal Digital Memorials',
+  description: 'Create a lasting tribute for your loved ones with our secure, beautiful digital memorial service.',
+  openGraph: {
+    title: 'HereAfter, Pal - Eternal Digital Memorials',
+    description: 'Create a lasting tribute for your loved ones.',
+    type: 'website',
+  },
+};
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className={poppins.variable} suppressHydrationWarning>
-      <body className="font-poppins">
+    <html lang="en" className={`${playfair.variable} ${inter.variable}`} suppressHydrationWarning>
+      <body className="antialiased bg-memorial-bg dark:bg-memorialDark-bg font-sans selection:bg-memorial-accent/20 selection:text-memorial-text">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             <ToastProvider />
             <div className="flex flex-col min-h-screen">
               <Navbar />
-              {/* Main content with proper padding for fixed navigation */}
-              {/* pt-16 md:pt-[72px] = top padding for fixed navbar */}
-              {/* pb-16 md:pb-0 = bottom padding for mobile bottom nav */}
-              <main className="flex-grow">
+              <main className="flex-grow pt-nav">
                 {children}
               </main>
               <Footer />
@@ -39,5 +39,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }

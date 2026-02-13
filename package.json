@@ -24,6 +24,7 @@
     "sweetalert2": "^11.26.17"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^22",
     "@types/react": "19.2.14",
     "@types/react-dom": "^19",
