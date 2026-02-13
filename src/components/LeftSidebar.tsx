@@ -15,7 +15,11 @@ import {
     CreditCard,
     X,
     Home,
+    ChevronDown,
+    ChevronRight,
 } from 'lucide-react';
+
+// ... (imports remain same, just adding Chevrons above)
 
 // Navigation items configuration
 const mainNavItems = [
@@ -36,11 +40,35 @@ const moreItems = [
     { href: '/pricing', label: 'Upgrade Plan', icon: CreditCard },
 ];
 
-function SidebarSection({ title, children }) {
+function SidebarSection({ title, children, defaultOpen = true }) {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
     return (
         <div className="sidebar-section">
-            <h3 className="sidebar-section-title">{title}</h3>
-            <div className="sidebar-section-content">{children}</div>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="sidebar-section-title w-full flex items-center justify-between group cursor-pointer hover:text-memorial-accent dark:hover:text-memorialDark-accent transition-colors"
+            >
+                {title}
+                {isOpen ? (
+                    <ChevronDown size={14} className="opacity-50 group-hover:opacity-100" />
+                ) : (
+                    <ChevronRight size={14} className="opacity-50 group-hover:opacity-100" />
+                )}
+            </button>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="sidebar-section-content pt-1">{children}</div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

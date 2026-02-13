@@ -90,24 +90,24 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-16">
-      <h1 className="text-3xl font-semibold text-center mb-8">
+      <h1 className="text-3xl font-serif font-semibold text-center mb-8 text-memorial-text dark:text-memorialDark-text">
         {isSignUp ? 'Create Your Account' : 'Sign In to Your Account'}
       </h1>
-      <div className="bg-light-surface dark:bg-dark-surface p-8 rounded-2xl shadow-lg border border-light-border dark:border-dark-border">
+      <div className="memorial-card p-8">
         <button
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full flex justify-center items-center gap-2 bg-light-surface dark:bg-dark-surface border border-light-border dark:border-dark-border font-medium py-2.5 px-4 rounded-lg mb-4 hover:bg-light-background dark:hover:bg-dark-background disabled:opacity-50"
+          className="w-full flex justify-center items-center gap-2 btn-ghost mb-4 disabled:opacity-50"
         >
           <Check size={18} />
           Sign in with Google
         </button>
         <div className="flex items-center my-4">
-          <div className="flex-grow border-t border-light-border dark:border-dark-border"></div>
-          <span className="mx-4 text-sm text-light-textSecondary dark:text-dark-textSecondary">OR</span>
-          <div className="flex-grow border-t border-light-border dark:border-dark-border"></div>
+          <div className="flex-grow border-t border-memorial-divider dark:border-memorialDark-divider"></div>
+          <span className="mx-4 text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">OR</span>
+          <div className="flex-grow border-t border-memorial-divider dark:border-memorialDark-divider"></div>
         </div>
-        <form onSubmit={handleAuthAction}>
+        <form onSubmit={handleAuthAction} className="space-y-4">
           <AnimatePresence>
             {isSignUp && (
               <motion.div
@@ -118,8 +118,8 @@ export default function LoginPage() {
                 exit="hidden"
                 className="overflow-hidden space-y-4"
               >
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1" htmlFor="fullName">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="fullName">
                     Full Name
                   </label>
                   <input
@@ -127,18 +127,18 @@ export default function LoginPage() {
                     id="fullName"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full p-2 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
+                    className="input-memorial"
                   />
                 </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1" htmlFor="role">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="role">
                     Your Role
                   </label>
                   <select
                     id="role"
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="w-full p-2 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
+                    className="select-memorial w-full"
                   >
                     <option value="Family">Family</option>
                     <option value="Father">Father</option>
@@ -150,8 +150,8 @@ export default function LoginPage() {
               </motion.div>
             )}
           </AnimatePresence>
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-1" htmlFor="email">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="email">
               Email
             </label>
             <input
@@ -159,12 +159,12 @@ export default function LoginPage() {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
+              className="input-memorial"
               required
             />
           </div>
-          <div className="mb-4 relative">
-            <label className="block text-sm font-medium mb-1" htmlFor="password">
+          <div className="relative">
+            <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="password">
               Password
             </label>
             <input
@@ -172,14 +172,14 @@ export default function LoginPage() {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 pr-10 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
+              className="input-memorial pr-10"
               required
               minLength={6}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-9 text-light-textSecondary dark:text-dark-textSecondary"
+              className="absolute right-3 top-[38px] text-memorial-textSecondary dark:text-memorialDark-textSecondary"
               aria-label="Show or hide password"
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -195,8 +195,8 @@ export default function LoginPage() {
                 exit="hidden"
                 className="overflow-hidden"
               >
-                <div className="mb-6 relative">
-                  <label className="block text-sm font-medium mb-1" htmlFor="confirmPassword">
+                <div className="relative">
+                  <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="confirmPassword">
                     Confirm Password
                   </label>
                   <input
@@ -204,7 +204,7 @@ export default function LoginPage() {
                     id="confirmPassword"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full p-2 pr-10 rounded-lg bg-light-background dark:bg-dark-background border border-light-border dark:border-dark-border"
+                    className="input-memorial pr-10"
                   />
                 </div>
               </motion.div>
@@ -213,7 +213,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-light-primaryButton text-light-buttonText dark:bg-dark-primaryButton dark:text-dark-buttonText font-medium py-2.5 px-4 rounded-lg disabled:opacity-50"
+            className="w-full btn-primary mt-6"
           >
             {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
           </button>
@@ -221,7 +221,7 @@ export default function LoginPage() {
         <div className="text-center mt-6">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-sm font-medium text-light-accent dark:text-dark-accent hover:underline"
+            className="text-sm font-medium text-memorial-accent dark:text-memorialDark-accent hover:underline"
             disabled={loading}
           >
             {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}

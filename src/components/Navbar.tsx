@@ -32,6 +32,11 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
   const pathname = usePathname()
   const { navigateToCreateMemorial } = useAuth()
 
+  // Hide navbar on dashboard routes as they have their own layout
+  if (pathname?.startsWith('/dashboard')) {
+    return null
+  }
+
   useEffect(() => {
     setMounted(true)
   }, [])

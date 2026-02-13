@@ -27,12 +27,13 @@ module.exports = {
           surfaceAlt: '#D8CFBC',   // Bone - alternate surfaces
 
           // Sidebar specific
-          sidebarBg: '#11120D',           // Smoky Black
-          sidebarHover: '#1A1B16',        // Slightly lighter Smoky Black
-          sidebarActive: '#565449',       // Olive Drab
-          sidebarActiveBorder: '#D8CFBC', // Bone accent
-          sidebarText: '#D8CFBC',         // Bone text
-          sidebarActiveText: '#FFFBF4',   // Floral White active text
+          // Sidebar specific (Light Mode)
+          sidebarBg: '#FFFBF4',           // Floral White
+          sidebarHover: '#F2EFE9',        // Light warm grey
+          sidebarActive: '#E8E4D9',       // Lighter Bone
+          sidebarActiveBorder: '#565449', // Olive Drab accent
+          sidebarText: '#565449',         // Olive Drab text
+          sidebarActiveText: '#11120D',   // Smoky Black active text
 
           // Text hierarchy
           text: '#11120D',          // Smoky Black - primary text

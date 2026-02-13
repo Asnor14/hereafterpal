@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {/* Main content with proper padding for fixed navigation */}
               {/* pt-16 md:pt-[72px] = top padding for fixed navbar */}
               {/* pb-16 md:pb-0 = bottom padding for mobile bottom nav */}
-              <main className="flex-grow pt-16 md:pt-[72px] pb-16 md:pb-0">
+              <main className="flex-grow">
                 {children}
               </main>
               <Footer />

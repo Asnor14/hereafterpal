@@ -200,7 +200,7 @@
 
   /* Skeleton loader */
   .skeleton {
-    @apply bg-gradient-to-r from-memorial-surfaceAlt via-memorial-border to-memorial-surfaceAlt;
+    @apply bg-gradient-to-r from-memorial-surfaceAlt via-memorial-surface to-memorial-surfaceAlt;
     @apply dark:from-memorialDark-surfaceAlt dark:via-memorialDark-border dark:to-memorialDark-surfaceAlt;
     @apply rounded-memorial;
     background-size: 200% 100%;
@@ -599,10 +599,9 @@
 
   .main-content {
     @apply flex-1;
-    @apply pt-4 md:pt-6;
+    @apply pt-6;
     @apply px-4 md:px-6;
-    @apply pb-20 md:pb-6;
-    /* Bottom nav padding on mobile */
+    @apply pb-6;
   }
 
   .content-inner {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabaseClient';
 import TopNav from './TopNav';
 import LeftSidebar from './LeftSidebar';
-import BottomNav from './BottomNav';
+
 import toast from 'react-hot-toast';
 import type { User } from '@supabase/supabase-js';
 
@@ -111,8 +111,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </main>
             </div>
 
-            {/* Bottom Navigation (Mobile) */}
-            <BottomNav />
+
         </div>
     );
 }

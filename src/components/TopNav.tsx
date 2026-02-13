@@ -41,22 +41,8 @@ export default function TopNav({ user, onSignOut, onMenuClick }) {
                     </Link>
                 </div>
 
-                {/* Center Section - Search (Desktop) */}
-                <div className="top-nav-center">
-                    <SearchBar />
-                </div>
-
                 {/* Right Section */}
                 <div className="top-nav-right">
-                    {/* Mobile Search Toggle */}
-                    <button
-                        className="top-nav-icon-btn md:hidden"
-                        onClick={() => setShowMobileSearch(!showMobileSearch)}
-                        aria-label="Search"
-                    >
-                        <Search size={20} />
-                    </button>
-
                     {/* Notifications */}
                     <button className="top-nav-icon-btn" aria-label="Notifications">
                         <Bell size={20} />
@@ -72,13 +58,6 @@ export default function TopNav({ user, onSignOut, onMenuClick }) {
                     {user && <ProfileDropdown user={user} onSignOut={onSignOut} />}
                 </div>
             </div>
-
-            {/* Mobile Search Bar */}
-            {showMobileSearch && (
-                <div className="top-nav-mobile-search">
-                    <SearchBar onSearch={() => setShowMobileSearch(false)} />
-                </div>
-            )}
         </nav>
     );
 }

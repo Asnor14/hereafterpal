@@ -9,7 +9,7 @@ export default function WelcomeBanner({ user, memorialCount = 0 }) {
         <div className="welcome-banner">
             <div className="welcome-content">
                 <h1 className="welcome-title">
-                    Welcome back, {userName} 👋
+                    Welcome back, {userName}
                 </h1>
                 <p className="welcome-subtitle">
                     {memorialCount > 0
