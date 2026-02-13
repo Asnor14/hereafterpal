@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useRouter } from 'next/navigation'
 import Swal from 'sweetalert2'
-import { Upload, X, AlertCircle, Check, ImagePlus, Mic, Play, Pause, Loader2 } from 'lucide-react'
+import { Upload, X, AlertCircle, Check, ImagePlus, Mic, Play, Pause, Loader2, Lock } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { CldUploadButton, CldImage } from 'next-cloudinary'
 import DashboardLayout from '@/components/DashboardLayout'
 import toast from 'react-hot-toast'
+import { isPaidPlan, getMemorialLimit } from '@/lib/planFeatures'
 
 // Mood options for AI Voice
 const MOOD_OPTIONS = [
@@ -57,6 +58,63 @@ export default function CreateMemorialPage() {
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string | null>>({})
+
+  // Subscription & Memorial Limit state
+  const [subscription, setSubscription] = useState(null)
+  const [memorialCount, setMemorialCount] = useState(0)
+  const [checkingLimit, setCheckingLimit] = useState(true)
+
+  // Fetch subscription & check limit
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        // Fetch Sub
+        const { data: subData } = await supabase
+          .from('subscriptions')
+          .select('plan, status')
+          .eq('user_id', user.id)
+          .in('status', ['active', 'trialing'])
+          .single()
+        setSubscription(subData)
+
+        // Fetch Count
+        const { count } = await supabase
+          .from('memorials')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+
+        setMemorialCount(count || 0)
+      }
+      setCheckingLimit(false)
+    }
+    fetchData()
+  }, [])
+
+  // Redirect if limit reached (client-side enforcement)
+  useEffect(() => {
+    if (!checkingLimit) {
+      const limit = getMemorialLimit(subscription?.plan);
+      if (memorialCount >= limit) {
+        Swal.fire({
+          title: 'Limit Reached',
+          text: `You have reached the limit of ${limit} memorial(s) for your current plan. Please upgrade to create more.`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Upgrade Plan',
+          cancelButtonText: 'Back to Dashboard'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            router.push('/pricing')
+          } else {
+            router.push('/dashboard')
+          }
+        })
+      }
+    }
+  }, [checkingLimit, memorialCount, subscription, router])
+
+  const isPaid = isPaidPlan(subscription?.plan)
 
   // Character count for bio
   const maxBioLength = 5000
@@ -697,22 +755,32 @@ export default function CreateMemorialPage() {
               Visibility <span className="text-red-500">*</span>
             </label>
             <div className="space-y-3">
-              <label className="flex items-start gap-3 p-4 rounded-memorial border border-memorial-border dark:border-memorialDark-border cursor-pointer hover:border-memorial-accent dark:hover:border-memorialDark-accent transition-colors">
+              <label className={`flex items-start gap-3 p-4 rounded-memorial border transition-colors ${!isPaid ? 'opacity-75 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed border-gray-200 dark:border-gray-700' : 'cursor-pointer hover:border-memorial-accent dark:hover:border-memorialDark-accent border-memorial-border dark:border-memorialDark-border'}`}>
                 <input
                   type="radio"
                   name="visibility"
                   value="public"
                   checked={visibility === 'public'}
-                  onChange={(e) => setVisibility(e.target.value)}
+                  onChange={(e) => isPaid && setVisibility(e.target.value)}
+                  disabled={!isPaid}
                   className="mt-0.5 w-4 h-4 text-memorial-accent focus:ring-memorial-accent dark:focus:ring-memorialDark-accent"
                 />
-                <div>
-                  <span className="block font-medium text-memorial-text dark:text-memorialDark-text">Public</span>
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <span className="block font-medium text-memorial-text dark:text-memorialDark-text">
+                      Public
+                      {!isPaid && <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full dark:bg-yellow-900 dark:text-yellow-200">Paid Plan</span>}
+                    </span>
+                    {!isPaid && (
+                      <a href="/pricing" className="text-xs text-memorial-accent hover:underline z-10 relative">Upgrade to unlock</a>
+                    )}
+                  </div>
                   <span className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">
                     Anyone can view this memorial
                   </span>
                 </div>
               </label>
+
               <label className="flex items-start gap-3 p-4 rounded-memorial border border-memorial-border dark:border-memorialDark-border cursor-pointer hover:border-memorial-accent dark:hover:border-memorialDark-accent transition-colors">
                 <input
                   type="radio"
@@ -742,13 +810,27 @@ export default function CreateMemorialPage() {
               <span className="text-xs px-2 py-0.5 rounded-full bg-memorial-accent/10 text-memorial-accent dark:bg-memorialDark-accent/10 dark:text-memorialDark-accent">
                 Optional
               </span>
+              {!isPaid && <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 flex items-center gap-1"><Lock size={10} /> Paid Feature</span>}
             </div>
             <p className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">
               Create a personalized voice message that will play on the memorial page.
             </p>
 
+            {!isPaid && (
+              <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 rounded-memorial flex items-start gap-3">
+                <Lock className="w-5 h-5 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
+                <div>
+                  <h4 className="text-sm font-semibold text-yellow-800 dark:text-yellow-400 mb-1">Pick-A-Mood AI Voice is Locked</h4>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-500">
+                    Upgrade to the Eternal Echo or Paws plan to create a custom AI voice tribute.
+                    <a href="/pricing" className="underline ml-1 font-medium hover:text-yellow-900 dark:hover:text-yellow-300">Upgrade Plan</a>
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Voice Type Selector */}
-            <div className="space-y-2">
+            <div className={`space-y-2 ${!isPaid ? 'opacity-50 pointer-events-none' : ''}`}>
               <label htmlFor="voiceType" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
                 Voice Type
               </label>
@@ -762,6 +844,7 @@ export default function CreateMemorialPage() {
                   setCloneVoiceAudio(null)
                 }}
                 className={`w-full ${selectClasses(false)}`}
+                disabled={!isPaid}
               >
                 <option value="ai-voice">AI Voice Tribute</option>
                 <option value="clone-voice">Clone Voice</option>
@@ -775,7 +858,7 @@ export default function CreateMemorialPage() {
 
             {/* AI Voice Mode */}
             {voiceType === 'ai-voice' && (
-              <>
+              <div className={!isPaid ? 'opacity-50 pointer-events-none' : ''}>
                 {/* Voice Message Textarea */}
                 <div className="space-y-2">
                   <label htmlFor="voiceMessage" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
@@ -792,6 +875,7 @@ export default function CreateMemorialPage() {
                     rows={4}
                     className={`${inputClasses(false)} resize-y min-h-[100px]`}
                     placeholder="Write the message you want the AI voice to read... (e.g., 'We remember you for your kindness, your laugh, and the love you shared with everyone around you.')"
+                    disabled={!isPaid}
                   />
                   <div className="flex justify-between">
                     <p className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary">
@@ -802,7 +886,7 @@ export default function CreateMemorialPage() {
                 </div>
 
                 {/* Mood Selector */}
-                <div className="space-y-2">
+                <div className="space-y-2 mt-4">
                   <label htmlFor="voiceMood" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
                     Voice Mood
                   </label>
@@ -811,6 +895,7 @@ export default function CreateMemorialPage() {
                     value={voiceMood}
                     onChange={(e) => setVoiceMood(e.target.value)}
                     className={`w-full ${selectClasses(false)}`}
+                    disabled={!isPaid}
                   >
                     {MOOD_OPTIONS.map(mood => (
                       <option key={mood.value} value={mood.value}>{mood.label}</option>
@@ -822,8 +907,8 @@ export default function CreateMemorialPage() {
                 <button
                   type="button"
                   onClick={handleGenerateVoice}
-                  disabled={isGeneratingVoice || !voiceMessage.trim()}
-                  className="w-full px-6 py-3 rounded-memorial bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt border border-memorial-accent dark:border-memorialDark-accent text-memorial-accent dark:text-memorialDark-accent font-medium hover:bg-memorial-accent/10 dark:hover:bg-memorialDark-accent/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 min-h-touch"
+                  disabled={isGeneratingVoice || !voiceMessage.trim() || !isPaid}
+                  className="w-full mt-6 px-6 py-3 rounded-memorial bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt border border-memorial-accent dark:border-memorialDark-accent text-memorial-accent dark:text-memorialDark-accent font-medium hover:bg-memorial-accent/10 dark:hover:bg-memorialDark-accent/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 min-h-touch"
                 >
                   {isGeneratingVoice ? (
                     <>
@@ -837,12 +922,12 @@ export default function CreateMemorialPage() {
                     </>
                   )}
                 </button>
-              </>
+              </div>
             )}
 
             {/* Clone Voice Mode */}
             {voiceType === 'clone-voice' && (
-              <>
+              <div className={!isPaid ? 'opacity-50 pointer-events-none' : ''}>
                 {/* Voice Sample Upload */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
@@ -933,7 +1018,7 @@ export default function CreateMemorialPage() {
                 <p className="text-xs text-center text-memorial-textTertiary dark:text-memorialDark-textTertiary">
                   Voice cloning feature is currently in development. Stay tuned!
                 </p>
-              </>
+              </div>
             )}
 
             {/* Progress Bar */}

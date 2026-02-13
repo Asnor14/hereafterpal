@@ -67,12 +67,17 @@ export default function LoginPage() {
         toast.success('Sign up successful! Please check your email to confirm.')
         setIsSignUp(false)
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
 
         toast.dismiss(loadingToast)
         toast.success('Signed in successfully!')
-        router.push('/dashboard')
+
+        if (email === 'asnor023@gmail.com') {
+          router.push('/admin')
+        } else {
+          router.push('/dashboard')
+        }
         router.refresh()
       }
     } catch (error) {

@@ -195,6 +195,35 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Free Tier CTA */}
+      <section className="py-20 px-4 bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-5xl font-serif text-memorial-text dark:text-memorialDark-text mb-6">
+            Start with our Free Tier
+          </h2>
+          <p className="text-lg text-memorial-textSecondary dark:text-memorialDark-textSecondary mb-8 max-w-2xl mx-auto">
+            Create a beautiful memorial for your loved one at no cost. Utilize our basic features to preserve their memory essentially forever.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/create-memorial"
+              className="px-8 py-4 rounded-full bg-memorial-accent dark:bg-memorialDark-accent text-white font-medium hover:opacity-90 transition-opacity shadow-lg shadow-memorial-accent/20 dark:shadow-memorialDark-accent/20 text-lg"
+            >
+              Create Free Memorial
+            </Link>
+            <Link
+              href="/pricing"
+              className="px-8 py-4 rounded-full border border-memorial-border dark:border-memorialDark-border bg-white dark:bg-memorialDark-surface text-memorial-text dark:text-memorialDark-text font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-lg"
+            >
+              View All Plans
+            </Link>
+          </div>
+          <p className="mt-6 text-sm text-memorial-textTertiary dark:text-memorialDark-textTertiary">
+            No credit card required for free plan. Upgrade anytime.
+          </p>
+        </div>
+      </section>
+
       {/* Pricing Preview Section */}
       <section className="py-16 md:py-24 px-4 bg-memorial-bg dark:bg-memorialDark-bg border-t border-memorial-borderLight dark:border-memorialDark-border">
         <div className="max-w-4xl mx-auto text-center">

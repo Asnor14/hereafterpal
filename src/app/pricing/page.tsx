@@ -29,7 +29,11 @@ export default function PricingPage() {
       return
     }
 
-    router.push('/create-memorial')
+    if (planKey === 'free') {
+      router.push('/create-memorial')
+    } else {
+      router.push(`/checkout?plan=${planKey}&billing=${billingCycle}`)
+    }
   }
 
   return (

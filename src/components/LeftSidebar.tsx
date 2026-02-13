@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, memo } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,6 +19,7 @@ import {
     ChevronDown,
     ChevronRight,
 } from 'lucide-react';
+import { canAccess, Feature, getMemorialLimit } from '@/lib/planFeatures';
 
 // ... (imports remain same, just adding Chevrons above)
 
@@ -29,9 +31,9 @@ const mainNavItems = [
 ];
 
 const featureItems = [
-    { href: '#', label: 'Memory Lane', icon: Image, disabled: true },
-    { href: '#', label: 'Letters of Love', icon: Mail, disabled: true },
-    { href: '#', label: 'Pick-A-Mood', icon: Volume2, disabled: true },
+    { href: '/memorials', label: 'Memory Lane', icon: Image, featureKey: 'memory_lane' as const },
+    { href: '/memorials', label: 'Letters of Love', icon: Mail, featureKey: 'letters_of_love' as const },
+    { href: '/memorials', label: 'Pick-A-Mood', icon: Volume2, featureKey: 'pick_a_mood' as const },
 ];
 
 const moreItems = [
@@ -106,86 +108,151 @@ function SidebarItem({ href, label, icon: Icon, badge, highlight, disabled = fal
     );
 }
 
-function UserCard({ user }) {
-    const getInitials = (email) => {
-        if (!email) return 'U';
-        return email.charAt(0).toUpperCase();
-    };
+function UserCard({ user, plan }: { user: any, plan: string | null }) {
+    if (!user) return null;
+    const planName = plan === 'eternal_echo' ? 'Eternal Echo' : plan === 'paws' ? 'Paws Plan' : 'Free Plan';
 
     return (
-        <div className="sidebar-user-card">
-            <div className="sidebar-user-avatar">
-                <span>{getInitials(user?.email)}</span>
-            </div>
-            <div className="sidebar-user-info">
-                <p className="sidebar-user-name">{user?.email?.split('@')[0] || 'User'}</p>
-                <p className="sidebar-user-plan">Free Plan</p>
+        <div className="p-4 border-t border-memorial-border dark:border-memorialDark-border bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-memorial-accent/10 dark:bg-memorialDark-accent/10 flex items-center justify-center text-memorial-accent dark:text-memorialDark-accent font-semibold">
+                    {user.email?.[0].toUpperCase()}
+                </div>
+                <div className="overflow-hidden">
+                    <p className="text-sm font-medium text-memorial-text dark:text-memorialDark-text truncate">
+                        {user.email}
+                    </p>
+                    <p className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary truncate">
+                        {planName}
+                    </p>
+                </div>
             </div>
         </div>
     );
 }
 
-function LeftSidebar({ user, isOpen, onClose }) {
+function LeftSidebar({ user }: { user: any }) {
     const pathname = usePathname();
+    const [userPlan, setUserPlan] = useState<string | null>(null);
+    const [memorialCount, setMemorialCount] = useState<number>(0);
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-    const isActive = (href, label) => {
-        // Home is active only on /dashboard
-        if (label === 'Home' && pathname === '/dashboard') return true;
-        // Memorials is active on /memorials or when viewing/editing a memorial
-        if (label === 'Memorials' && pathname === '/memorials') return true;
-        if (label === 'Memorials' && pathname.includes('/memorial/') && pathname.includes('/edit')) return true;
-        // Other items
-        if (href !== '/dashboard' && href !== '/memorials' && pathname.startsWith(href)) return true;
-        return false;
+    // Fetch user plan and memorial count
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!user?.id) return;
+            try {
+                // Fetch Plan
+                const subRes = await fetch(`/api/subscriptions?user_id=${user.id}`);
+                if (subRes.ok) {
+                    const data = await subRes.json();
+                    if (Array.isArray(data) && data.length > 0 && data[0].status === 'active') {
+                        setUserPlan(data[0].plan);
+                    } else {
+                        setUserPlan('free');
+                    }
+                } else {
+                    setUserPlan('free');
+                }
+
+                // Fetch Memorial Count
+                const supabase = createBrowserClient(
+                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+                );
+                const { count, error } = await supabase
+                    .from('memorials')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id);
+
+                if (!error && count !== null) {
+                    setMemorialCount(count);
+                }
+            } catch (err) {
+                console.error('Error fetching sidebar data:', err);
+                setUserPlan('free');
+            }
+        };
+        fetchData();
+    }, [user?.id]);
+
+    const isActive = (path: string, label: string) => {
+        if (path === '/memorials' && label !== 'Memorials') return false; // Don't highlight features on memorial list
+        return pathname === path || pathname.startsWith(`${path}/`);
     };
+
+    const toggleMobileSidebar = () => setIsMobileOpen(!isMobileOpen);
+    const closeMobileSidebar = () => setIsMobileOpen(false);
+
+    // Calculate Limits
+    const memorialLimit = getMemorialLimit(userPlan);
+    const canCreateMemorial = memorialCount < memorialLimit;
 
     const sidebarContent = (
         <>
-            {/* User Quick Access */}
-            <div className="sidebar-header">
-                <UserCard user={user} />
-            </div>
-
             {/* Main Navigation */}
             <nav className="sidebar-nav">
-                <div className="sidebar-nav-group">
-                    {mainNavItems.map((item) => (
-                        <SidebarItem
-                            key={item.label}
-                            {...item}
-                            active={isActive(item.href, item.label)}
-                            onClose={onClose}
-                        />
-                    ))}
-                </div>
+                <SidebarSection title="Menu">
+                    {mainNavItems.map((item) => {
+                        // Check for Create Memorial Limit
+                        let isDisabled = false;
+                        let badge = item.badge;
 
-                <SidebarSection title="Features">
-                    {featureItems.map((item) => (
-                        <SidebarItem
-                            key={item.label}
-                            {...item}
-                            active={isActive(item.href, item.label)}
-                            onClose={onClose}
-                        />
-                    ))}
+                        if (item.label === 'Create Memorial' && !canCreateMemorial) {
+                            isDisabled = true;
+                            badge = 'Limit';
+                        }
+
+                        return (
+                            <SidebarItem
+                                key={item.label}
+                                href={item.href}
+                                label={item.label}
+                                icon={item.icon}
+                                active={isActive(item.href, item.label)}
+                                highlight={item.highlight}
+                                badge={badge}
+                                disabled={isDisabled}
+                                onClose={closeMobileSidebar}
+                            />
+                        );
+                    })}
                 </SidebarSection>
 
-                <SidebarSection title="More">
+                <SidebarSection title="Features">
+                    {featureItems.map((item) => {
+                        const hasAccess = canAccess(userPlan, item.featureKey);
+                        return (
+                            <SidebarItem
+                                key={item.label}
+                                href={item.href}
+                                label={item.label}
+                                icon={item.icon}
+                                active={isActive(item.href, item.label)}
+                                disabled={!hasAccess}
+                                onClose={closeMobileSidebar}
+                                badge={!hasAccess ? 'Locked' : null}
+                            />
+                        );
+                    })}
+                </SidebarSection>
+
+                <SidebarSection title="Account">
                     {moreItems.map((item) => (
                         <SidebarItem
                             key={item.label}
                             {...item}
                             active={isActive(item.href, item.label)}
-                            onClose={onClose}
+                            onClose={closeMobileSidebar}
                         />
                     ))}
                 </SidebarSection>
             </nav>
 
             {/* Sidebar Footer */}
-            <div className="sidebar-footer">
+            <div className="mt-auto pt-6 px-2 pb-2">
                 <p className="text-xs text-memorial-textTertiary dark:text-memorialDark-textTertiary">
-                    <span className="decorative-letter">H</span>ereafter, <span className="decorative-letter">P</span>al
+                    <span className="font-serif">H</span>ereafter, <span className="font-serif">P</span>al
                 </p>
                 <p className="text-xs text-memorial-textTertiary dark:text-memorialDark-textTertiary mt-1">
                     © 2026 All rights reserved
@@ -196,22 +263,35 @@ function LeftSidebar({ user, isOpen, onClose }) {
 
     return (
         <>
-            {/* Desktop Sidebar - Fixed */}
-            <aside className="left-sidebar">
-                {sidebarContent}
+            {/* Desktop Sidebar */}
+            <aside className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 border-r border-memorial-border dark:border-memorialDark-border bg-memorial-surface dark:bg-memorialDark-surface transition-colors z-30">
+                <div className="p-6">
+                    <Link href="/dashboard" className="block">
+                        <h1 className="text-2xl font-serif text-memorial-text dark:text-memorialDark-text tracking-tight">
+                            HereAfter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
+                        </h1>
+                    </Link>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-4 space-y-6 flex flex-col">
+                    {sidebarContent}
+                </div>
+
+                {/* User Profile Card */}
+                <UserCard user={user} plan={userPlan} />
             </aside>
 
             {/* Mobile Sidebar - Drawer */}
             <AnimatePresence>
-                {isOpen && (
+                {isMobileOpen && (
                     <>
                         {/* Backdrop */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            onClick={onClose}
-                            className="sidebar-backdrop"
+                            onClick={closeMobileSidebar}
+                            className="fixed inset-0 bg-black/50 z-40 md:hidden"
                         />
 
                         {/* Mobile Sidebar */}
@@ -220,25 +300,52 @@ function LeftSidebar({ user, isOpen, onClose }) {
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                            className="mobile-sidebar"
+                            className="fixed top-0 left-0 w-64 h-full bg-memorial-surface dark:bg-memorialDark-surface z-50 overflow-y-auto flex flex-col md:hidden border-r border-memorial-border dark:border-memorialDark-border"
                         >
-                            {/* Close Button */}
-                            <button
-                                onClick={onClose}
-                                className="mobile-sidebar-close"
-                                aria-label="Close menu"
-                            >
-                                <X size={24} />
-                            </button>
+                            <div className="p-4 flex items-center justify-between border-b border-memorial-border dark:border-memorialDark-border">
+                                <Link href="/dashboard" onClick={closeMobileSidebar}>
+                                    <h1 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text tracking-tight">
+                                        HereAfter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
+                                    </h1>
+                                </Link>
+                                <button
+                                    onClick={closeMobileSidebar}
+                                    className="p-1 rounded-md hover:bg-memorial-bg dark:hover:bg-memorialDark-bg text-memorial-textSecondary dark:text-memorialDark-textSecondary"
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
 
-                            {sidebarContent}
+                            <div className="flex-1 overflow-y-auto px-4 space-y-6 py-6 flex flex-col">
+                                {sidebarContent}
+                            </div>
+
+                            <UserCard user={user} plan={userPlan} />
                         </motion.aside>
                     </>
                 )}
             </AnimatePresence>
+
+            {/* Mobile Trigger Button (visible when sidebar is closed) */}
+            <div className="md:hidden fixed top-0 left-0 w-full bg-memorial-surface dark:bg-memorialDark-surface border-b border-memorial-border dark:border-memorialDark-border z-30 px-4 py-3 flex items-center justify-between">
+                <Link href="/dashboard" className="text-xl font-serif font-bold text-memorial-text dark:text-memorialDark-text">
+                    HereAfter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
+                </Link>
+                <button
+                    onClick={toggleMobileSidebar}
+                    className="p-2 text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:bg-memorial-bg dark:hover:bg-memorialDark-bg rounded-md"
+                >
+                    {isMobileOpen ? <X size={24} /> : (
+                        <div className="space-y-1.5">
+                            <span className="block w-6 h-0.5 bg-current"></span>
+                            <span className="block w-6 h-0.5 bg-current"></span>
+                            <span className="block w-6 h-0.5 bg-current"></span>
+                        </div>
+                    )}
+                </button>
+            </div>
         </>
     );
 }
 
-// Memoize the sidebar to prevent unnecessary re-renders on navigation
 export default memo(LeftSidebar);

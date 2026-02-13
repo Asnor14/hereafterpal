@@ -32,10 +32,7 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
   const pathname = usePathname()
   const { navigateToCreateMemorial } = useAuth()
 
-  // Hide navbar on dashboard routes as they have their own layout
-  if (pathname?.startsWith('/dashboard')) {
-    return null
-  }
+
 
   useEffect(() => {
     setMounted(true)
@@ -104,6 +101,11 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
   ]
 
   const isActive = (href) => pathname === href
+
+  // Hide navbar on dashboard routes as they have their own layout
+  if (!isDashboard && pathname?.startsWith('/dashboard')) {
+    return null
+  }
 
   // Dashboard navbar (simplified with search)
   if (isDashboard) {

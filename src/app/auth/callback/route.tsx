@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
             }
         )
 
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (error) {
             console.error('Auth callback error:', error.message)
@@ -42,7 +42,13 @@ export async function GET(request: NextRequest) {
         }
 
         // Build redirect URL (allow only relative paths for safety)
-        const redirectTo = next.startsWith('/') ? next : '/dashboard'
+        let redirectTo = next.startsWith('/') ? next : '/dashboard'
+
+        // Redirect admin to admin dashboard
+        if (data?.session?.user?.email === 'asnor023@gmail.com') {
+            redirectTo = '/admin'
+        }
+
         const redirectUrl = new URL(redirectTo, requestUrl.origin)
 
         const response = NextResponse.redirect(redirectUrl)
