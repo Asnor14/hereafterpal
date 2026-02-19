@@ -6,14 +6,16 @@ import PricingPreviewSection from '@/components/homepage/PricingPreviewSection';
 import FinalCTASection from '@/components/homepage/FinalCTASection';
 
 export default function Home() {
-  return (
-    <main>
-      <HeroSection />
-      <QuickActionsSection />
-      <BenefitsSection />
-      <HowItWorksSection />
-      <PricingPreviewSection />
-      <FinalCTASection />
-    </main>
-  );
+    return (
+        <main className="bg-memorial-bg dark:bg-memorialDark-bg min-h-screen">
+            <HeroSection />
+            <div className="space-y-20 md:space-y-32">
+                <QuickActionsSection />
+                <BenefitsSection />
+                <HowItWorksSection />
+                <PricingPreviewSection />
+                <FinalCTASection />
+            </div>
+        </main>
+    );
 }
