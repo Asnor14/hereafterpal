@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         let redirectTo = next.startsWith('/') ? next : '/dashboard'
 
         // Redirect admin to admin dashboard
-        if (data?.session?.user?.email === 'asnor023@gmail.com') {
+        if (['asnor023@gmail.com', 'hereafterpal104@gmail.com'].includes(data?.session?.user?.email ?? '')) {
             redirectTo = '/admin'
         }
 

@@ -73,7 +73,7 @@ export default function LoginPage() {
         toast.dismiss(loadingToast)
         toast.success('Signed in successfully!')
 
-        if (email === 'asnor023@gmail.com') {
+        if (['asnor023@gmail.com', 'hereafterpal104@gmail.com'].includes(email)) {
           router.push('/admin')
         } else {
           router.push('/dashboard')

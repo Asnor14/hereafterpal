@@ -7,7 +7,7 @@ import { User } from '@supabase/supabase-js';
 import { Loader2, ShieldCheck, LogOut, LayoutDashboard, Users, Database } from 'lucide-react';
 import Link from 'next/link';
 
-const ADMIN_EMAIL = 'asnor023@gmail.com';
+const ADMIN_EMAILS = ['asnor023@gmail.com', 'hereafterpal104@gmail.com'];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 return;
             }
 
-            if (session.user.email !== ADMIN_EMAIL) {
+            if (!ADMIN_EMAILS.includes(session.user.email ?? '')) {
                 router.push('/dashboard'); // Redirect non-admins to user dashboard
                 return;
             }
