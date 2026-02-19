@@ -5,7 +5,7 @@ import HowItWorksSection from '@/components/homepage/HowItWorksSection';
 import PricingPreviewSection from '@/components/homepage/PricingPreviewSection';
 import FinalCTASection from '@/components/homepage/FinalCTASection';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default function Home() {
     return (
