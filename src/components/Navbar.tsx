@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, MessageSquareHeart, ChevronRight, LogIn } from 'lucide-react';
+import { Menu, X, MessageSquareHeart, ChevronRight, LogIn, Home, BookOpen, Camera, MessageCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabaseClient';
 import { type User } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
@@ -90,9 +90,18 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
     { href: '/#pricing', label: 'Pricing', id: 'pricing' },
   ];
 
+  const memorialLinks = [
+    { href: '#home', label: 'Home', id: 'home', icon: Home },
+    { href: '#life-story', label: 'Life Story', id: 'life-story', icon: BookOpen },
+    { href: '#photos', label: 'Photos', id: 'photos', icon: Camera },
+    { href: '#guestbook', label: 'Letters of Love', id: 'guestbook', icon: MessageCircle },
+  ];
+
+  const isMemorialPage = pathname?.startsWith('/memorial') && !pathname?.includes('/edit');
+
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (href.startsWith('/#')) {
-      const id = href.replace('/#', '');
+    if (href.startsWith('#') || href.startsWith('/#')) {
+      const id = href.startsWith('/#') ? href.replace('/#', '') : href.replace('#', '');
       const element = document.getElementById(id);
       if (element) {
         e.preventDefault();
@@ -125,8 +134,8 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
               <Menu size={24} />
             </button>
             <Link href="/dashboard" className="top-nav-logo">
-              <MessageSquareHeart size={28} className="text-memorial-accent dark:text-memorialDark-accent" />
-              <span className="top-nav-logo-text">
+              <MessageSquareHeart size={22} className="text-memorial-accent dark:text-memorialDark-accent" />
+              <span className="top-nav-logo-text text-sm">
                 <span className="decorative-letter">H</span>ereAfter, <span className="decorative-letter">P</span>al
               </span>
             </Link>
@@ -166,19 +175,36 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
 
           {/* Desktop Navigation - Micro-copy style */}
           <div className="hidden md:flex items-center gap-10">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={(e) => handleLinkClick(e, link.href)}
-                className={`text-[10px] uppercase tracking-[0.2em] font-medium transition-all duration-300 hover:-translate-y-0.5 ${isActive(link.href)
-                  ? 'text-memorial-accent dark:text-memorialDark-accent'
-                  : 'text-memorial-textSecondary/80 dark:text-memorialDark-textSecondary/80 hover:text-memorial-text dark:hover:text-memorialDark-text'
-                  }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {isMemorialPage ? (
+              memorialLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <Link
+                    key={link.id}
+                    href={link.href}
+                    onClick={(e) => handleLinkClick(e, link.href)}
+                    className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-medium transition-all duration-300 hover:-translate-y-0.5 text-memorial-textSecondary/80 dark:text-memorialDark-textSecondary/80 hover:text-memorial-text dark:hover:text-memorialDark-text"
+                  >
+                    <Icon size={14} className="opacity-60" />
+                    {link.label}
+                  </Link>
+                );
+              })
+            ) : (
+              !isDashboard && navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={(e) => handleLinkClick(e, link.href)}
+                  className={`text-[10px] uppercase tracking-[0.2em] font-medium transition-all duration-300 hover:-translate-y-0.5 ${isActive(link.href)
+                    ? 'text-memorial-accent dark:text-memorialDark-accent'
+                    : 'text-memorial-textSecondary/80 dark:text-memorialDark-textSecondary/80 hover:text-memorial-text dark:hover:text-memorialDark-text'
+                    }`}
+                >
+                  {link.label}
+                </Link>
+              ))
+            )}
           </div>
 
           {/* Desktop Actions */}
@@ -207,7 +233,7 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
                   </Link>
                   <Link
                     href="/login?signup=true"
-                    className="h-11 px-6 flex items-center justify-center bg-memorial-accent text-memorial-bg dark:text-memorialDark-bg rounded-sm text-xs uppercase tracking-widest font-medium hover:bg-memorial-accentHover transition-all hover:-translate-y-0.5"
+                    className="btn-primary"
                   >
                     Get Started
                   </Link>
@@ -244,19 +270,36 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
             className="fixed inset-0 top-0 bg-memorial-bg dark:bg-memorialDark-bg z-40 md:hidden pt-28 px-6 flex flex-col h-screen"
           >
             <div className="flex flex-col space-y-6">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={(e) => handleLinkClick(e, link.href)}
-                  className={`text-2xl font-serif font-medium border-b border-memorial-border/20 dark:border-memorialDark-border/20 pb-4 ${isActive(link.href)
-                    ? 'text-memorial-accent dark:text-memorialDark-accent'
-                    : 'text-memorial-text dark:text-memorialDark-text'
-                    }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {isMemorialPage ? (
+                memorialLinks.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.id}
+                      href={link.href}
+                      onClick={(e) => handleLinkClick(e, link.href)}
+                      className="flex items-center gap-4 text-2xl font-serif font-medium border-b border-memorial-border/20 dark:border-memorialDark-border/20 pb-4 text-memorial-text dark:text-memorialDark-text"
+                    >
+                      <Icon size={24} className="text-memorial-accent dark:text-memorialDark-accent" />
+                      {link.label}
+                    </Link>
+                  );
+                })
+              ) : (
+                !isDashboard && navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={(e) => handleLinkClick(e, link.href)}
+                    className={`text-2xl font-serif font-medium border-b border-memorial-border/20 dark:border-memorialDark-border/20 pb-4 ${isActive(link.href)
+                      ? 'text-memorial-accent dark:text-memorialDark-accent'
+                      : 'text-memorial-text dark:text-memorialDark-text'
+                      }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))
+              )}
             </div>
 
             <div className="mt-auto mb-12 space-y-6">

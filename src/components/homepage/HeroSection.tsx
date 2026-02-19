@@ -34,14 +34,14 @@ export default function HeroSection() {
                             </div>
 
                             {/* Massive Headline */}
-                            <h1 className="font-serif font-medium text-memorial-text dark:text-memorialDark-text tracking-tight -ml-1">
+                            <h1 className="font-serif font-medium text-display tracking-tight -ml-1">
                                 Honoring <br />
                                 <span className="italic text-memorial-accent">Life,</span> <br />
                                 Forever.
                             </h1>
 
                             {/* Body Text - Max width constraint */}
-                            <p className="text-base md:text-lg font-sans leading-relaxed text-memorial-textSecondary dark:text-memorialDark-textSecondary max-w-xl border-l border-memorial-border/50 pl-6">
+                            <p className="text-body max-w-xl border-l border-memorial-border/50 pl-6">
                                 Create a timeless digital archive for your loved ones.
                                 A structured, peaceful space to share stories, photos, and tributes that endure.
                             </p>
@@ -50,13 +50,13 @@ export default function HeroSection() {
                             <div className="flex flex-col sm:flex-row gap-4 pt-4">
                                 <button
                                     onClick={handleGetStarted}
-                                    className="h-14 px-8 bg-memorial-text dark:bg-memorialDark-text text-memorial-bg dark:text-memorialDark-bg rounded-md text-sm md:text-base font-medium tracking-wide flex items-center justify-center gap-2 hover:-translate-y-0.5 transition-all duration-300"
+                                    className="btn-primary px-8"
                                 >
                                     Create a Legacy <ArrowRight size={18} />
                                 </button>
                                 <button
                                     onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
-                                    className="h-14 px-8 border border-memorial-border dark:border-memorialDark-border text-memorial-text dark:text-memorialDark-text rounded-md text-sm md:text-base font-medium tracking-wide hover:bg-memorial-surfaceAlt/20 transition-all duration-300"
+                                    className="btn-ghost px-8"
                                 >
                                     View Sample Memorial
                                 </button>

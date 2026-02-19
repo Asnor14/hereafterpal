@@ -122,19 +122,28 @@ export default function MemorialCard({ memorial, onDelete }) {
                             <Eye size={16} />
                             View
                         </Link>
-                        <Link
-                            href={`/memorial/${id}/edit`}
-                            className="flex items-center justify-center px-3 py-2 border border-memorial-border dark:border-memorialDark-border rounded-memorial text-sm font-medium text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:border-memorial-accent dark:hover:border-memorialDark-accent hover:text-memorial-accent dark:hover:text-memorialDark-accent transition-colors"
-                        >
-                            <Pencil size={16} />
-                        </Link>
-                        <button
-                            onClick={() => setShowDeleteModal(true)}
-                            className="flex items-center justify-center px-3 py-2 border border-memorial-border dark:border-memorialDark-border rounded-memorial text-sm font-medium text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:border-red-500 hover:text-red-500 dark:hover:border-red-400 dark:hover:text-red-400 transition-colors"
-                            aria-label="Delete memorial"
-                        >
-                            <Trash2 size={16} />
-                        </button>
+                        {!memorial.isShared && (
+                            <>
+                                <Link
+                                    href={`/memorial/${id}/edit`}
+                                    className="flex items-center justify-center px-3 py-2 border border-memorial-border dark:border-memorialDark-border rounded-memorial text-sm font-medium text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:border-memorial-accent dark:hover:border-memorialDark-accent hover:text-memorial-accent dark:hover:border-memorialDark-accent transition-colors"
+                                >
+                                    <Pencil size={16} />
+                                </Link>
+                                <button
+                                    onClick={() => setShowDeleteModal(true)}
+                                    className="flex items-center justify-center px-3 py-2 border border-memorial-border dark:border-memorialDark-border rounded-memorial text-sm font-medium text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:border-red-500 hover:text-red-500 dark:hover:border-red-400 dark:hover:text-red-400 transition-colors"
+                                    aria-label="Delete memorial"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </>
+                        )}
+                        {memorial.isShared && (
+                            <div className="flex items-center justify-center px-3 py-2 bg-memorial-accent/5 dark:bg-memorialDark-accent/5 rounded-memorial text-[10px] font-bold uppercase tracking-wider text-memorial-accent/60 dark:text-memorialDark-accent/60 border border-memorial-accent/10">
+                                {memorial.access_role}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

@@ -24,44 +24,54 @@
     line-height: 1.7;
   }
 
-  /* Typography Hierarchy */
+  /* Typography Hierarchy - Standardized */
   h1,
+  .text-display {
+    font-family: 'Playfair Display', serif;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    @apply text-memorial-text dark:text-memorialDark-text;
+    font-size: var(--text-display);
+  }
+
   h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: 'Playfair Display', 'Crimson Text', 'Lora', serif;
-    letter-spacing: 0.02em;
+  .text-h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 500;
     line-height: 1.3;
     @apply text-memorial-text dark:text-memorialDark-text;
+    font-size: var(--text-h2);
   }
 
-  h1 {
-    @apply text-[40px] md:text-[56px] lg:text-[72px];
-    line-height: 1.1;
+  h3,
+  .text-h3 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 500;
+    line-height: 1.4;
+    @apply text-memorial-text dark:text-memorialDark-text;
+    font-size: var(--text-h3);
   }
 
-  h2 {
-    @apply text-[28px] md:text-[40px] lg:text-[48px];
+  h4,
+  .text-h4 {
+    @apply text-memorial-text dark:text-memorialDark-text;
+    font-size: var(--text-base);
+    font-weight: 600;
   }
 
-  h3 {
-    @apply text-[24px] md:text-[28px] lg:text-[32px];
-  }
-
-  h4 {
-    @apply text-[18px] md:text-[20px] lg:text-[20px];
-  }
-
-  p {
-    @apply text-[16px] md:text-[18px] lg:text-[18px];
+  p,
+  .text-body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.7;
     @apply text-memorial-textSecondary dark:text-memorialDark-textSecondary;
-    @apply leading-relaxed;
+    font-size: var(--text-base);
   }
 
-  .text-small {
-    @apply text-[16px] md:text-[16px] lg:text-[15px];
+  .text-caption {
+    font-size: var(--text-caption);
+    line-height: 1.5;
+    @apply text-memorial-textTertiary dark:text-memorialDark-textTertiary;
   }
 
   /* Focus States - Accessibility */
@@ -84,30 +94,13 @@
 /* ===== COMPONENTS LAYER ===== */
 @layer components {
 
-  /* Decorative First Letter */
-  .decorative-letter {
-    font-family: 'Playfair Display', serif;
-    font-weight: 700;
-    font-style: italic;
-    @apply text-memorial-text dark:text-memorialDark-text;
-  }
-
-  .decorative-heading {
-    display: inline;
-  }
-
-  .decorative-heading::first-letter {
-    font-family: 'Playfair Display', serif;
-    font-weight: 700;
-    font-style: italic;
-    font-size: 1.15em;
-  }
-
-  /* Memorial Card Component */
+  /* Memorial Card Component - Standardized */
   .memorial-card {
     @apply bg-memorial-surface dark:bg-memorialDark-surface;
     @apply border border-memorial-borderLight dark:border-memorialDark-border;
-    border-radius: var(--radius-memorial);
+    @apply p-4 md:p-6 lg:p-8;
+    /* Mobile: 16px, Tablet: 24px, Desktop: 32px */
+    border-radius: var(--radius-memorial-lg);
     box-shadow: var(--shadow-md);
     @apply transition-all duration-300 ease-memorial;
   }
@@ -117,41 +110,33 @@
     @apply border-memorial-accent/30 dark:border-memorialDark-accent/30;
   }
 
-  /* Primary Button */
+  /* Buttons - Standardized Heights & Text */
   .btn-primary {
     @apply bg-memorial-accent dark:bg-memorialDark-accent;
     @apply text-white dark:text-memorialDark-bg font-medium;
-    @apply px-6 py-3;
+    @apply px-6 py-2.5 md:py-3;
+    /* Mobile 44px, Desktop 48px */
+    @apply text-sm;
+    /* 14px centered as per button requirement */
     min-height: 44px;
     border-radius: var(--radius-memorial);
-    box-shadow: var(--shadow-md);
-    transition: box-shadow 0.2s;
-    @apply hover:opacity-90;
-
-    &:active {
-      transform: scale(0.98);
-    }
-
-    @apply transition-all duration-200;
+    line-height: 1.5;
+    @apply flex items-center justify-center gap-2;
+    @apply hover:opacity-90 active:scale-[0.98] transition-all duration-200;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply focus-visible:ring-2 focus-visible:ring-memorial-accent focus-visible:ring-offset-2;
   }
 
-  /* Secondary/Ghost Button */
   .btn-ghost {
     @apply bg-transparent;
     @apply text-memorial-text dark:text-memorialDark-text;
     @apply border border-memorial-border dark:border-memorialDark-border;
-    @apply px-6 py-3 min-h-touch;
+    @apply px-6 py-2.5 md:py-3;
+    @apply text-sm;
+    min-height: 44px;
     border-radius: var(--radius-memorial);
+    @apply flex items-center justify-center gap-2;
     @apply hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt;
-    @apply hover:border-memorial-accent dark:hover:border-memorialDark-accent;
-
-    &:active {
-      transform: scale(0.98);
-    }
-
-    @apply transition-all duration-200;
+    @apply active:scale-[0.98] transition-all duration-200;
   }
 
   /* Input Field */
@@ -236,124 +221,110 @@
     }
   }
 
-  /* Sidebar styles */
-  .sidebar {
-    @apply fixed left-0 top-nav h-[calc(100vh-64px)];
-    @apply w-sidebar bg-memorial-surface dark:bg-memorialDark-surface;
-    @apply border-r border-memorial-borderLight dark:border-memorialDark-border;
-    @apply overflow-y-auto;
-    @apply hidden md:block;
-    @apply z-30;
-    left: 0 !important;
-    padding-left: 0 !important;
-    margin-left: 0 !important;
+  /* Dashboard Navigation - Compacted */
+  .sidebar-item {
+    @apply flex items-center gap-3;
+    @apply mx-2 px-3 py-2.5 rounded-memorial;
+    /* Compacted from py-3 */
+    @apply text-memorial-textSecondary dark:text-memorialDark-textSecondary;
+    @apply hover:bg-memorial-surfaceAlt/50 dark:hover:bg-memorialDark-surfaceAlt/30;
+    @apply transition-all duration-200 cursor-pointer;
   }
 
-  .sidebar-item {
-    @apply flex items-center gap-3 px-4 py-3;
-    @apply text-memorial-textSecondary dark:text-memorialDark-textSecondary;
-    @apply hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt;
-    @apply transition-colors duration-200;
-    @apply rounded-memorial mx-2;
+  .sidebar-item-label {
+    @apply text-sm;
+    /* Explicitly 14px as per nav item requirement */
+    line-height: 1.5;
+  }
+
+  .sidebar-item-active {
+    @apply bg-memorial-surfaceAlt/40 dark:bg-memorialDark-surfaceAlt/40;
+    @apply text-memorial-text dark:text-memorialDark-text font-medium;
+  }
+
+  /* Welcome Banner - Compacted */
+  .welcome-banner {
+    @apply flex flex-col md:flex-row md:items-center justify-between;
+    @apply mb-8 p-6 lg:p-10;
+    /* Architectural negative space */
+    @apply bg-memorial-surface dark:bg-memorialDark-surface;
+    @apply border border-memorial-borderLight dark:border-memorialDark-border;
+    @apply rounded-memorial-lg;
+  }
+
+  .welcome-title {
+    @apply text-h2 font-serif;
+    /* Standardized to H2 scale */
+    @apply text-memorial-text dark:text-memorialDark-text mb-1;
+  }
+
+  .welcome-subtitle {
+    @apply text-body max-w-2xl;
+  }
+
+  /* Quick Action Card - Unified with Homepage */
+  .quick-action-card {
+    @apply flex items-center gap-4;
+    @apply p-4 md:p-6;
+    @apply memorial-card;
+    /* Inherit standard card styling */
+    @apply cursor-pointer;
+  }
+
+  .quick-action-card-primary {
+    @apply bg-memorial-accent dark:bg-memorialDark-accent border-transparent;
+  }
+
+  .quick-action-card-primary * {
+    @apply text-white dark:text-memorialDark-bg;
+  }
+
+  .quick-action-title {
+    @apply text-h3 font-serif mb-1;
+    /* Use H3 scale for consistency */
+  }
+
+  .quick-action-description {
+    @apply text-caption;
+  }
+
+  /* Stats Card - Balanced */
+  .stats-card {
+    @apply memorial-card;
+    @apply flex items-center gap-4 py-4 px-6;
   }
 
   /* ===========================
-   COLOR PALETTE - Light Mode
-   =========================== */
+     DESIGN SYSTEM TOKEN DEFINITIONS
+     =========================== */
   :root {
-    /* Backgrounds */
+    /* Color Palette - Light Mode */
     --memorial-bg: #FFFBF4;
-    /* Floral White - Primary */
     --memorial-surface: #FFFBF4;
-    /* Surface cards */
     --memorial-surfaceAlt: #D8CFBC;
-    /* Bone - Alternate surface */
-
-    /* Text Hierarchy */
     --memorial-text: #11120D;
-    /* Smoky Black - Headers, primary */
     --memorial-textSecondary: #565449;
-    /* Olive Drab - Body, labels */
     --memorial-textTertiary: #7A7A6D;
-    /* Muted Olive - Meta, timestamps */
-
-    /* Interactive Elements */
     --memorial-accent: #565449;
-    /* Olive Drab - CTAs, links */
-    --memorial-accentHover: #6B6A5E;
-    /* 10% lighter on hover */
-    --memorial-accentActive: #45443A;
-    /* 10% darker on active */
-
-    /* Borders & Dividers */
     --memorial-border: #D8CFBC;
-    /* Bone - Default borders */
     --memorial-borderLight: #E8E4D9;
-    /* Lighter - Subtle dividers */
-    --memorial-borderDark: #C8BFB0;
-    /* Darker - Emphasized */
     --memorial-divider: #D8CFBC;
-    /* Section separators */
+    --memorial-sidebarBg: #FFFBF4;
+    --memorial-sidebarHover: #D8CFBC;
 
-    /* Overlay & Shadows */
-    --memorial-overlay: rgba(17, 18, 13, 0.6);
-    /* For hero gradient */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.12);
-    --shadow-card-hover: 0 12px 24px -4px rgba(0, 0, 0, 0.14);
+    /* Typography Matrix (clamp: min, preferred, max) */
+    --text-display: clamp(2.5rem, 6vw, 4rem);
+    /* 40px - 64px */
+    --text-h2: clamp(1.5rem, 4vw, 2rem);
+    /* 24px - 32px */
+    --text-h3: clamp(1.125rem, 3vw, 1.25rem);
+    /* 18px - 20px */
+    --text-base: clamp(0.875rem, 2vw, 1rem);
+    /* 14px - 16px */
+    --text-caption: clamp(0.75rem, 1.5vw, 0.875rem);
+    /* 12px - 14px */
 
-    /* Font Families */
-    --font-serif: 'Playfair Display', 'Georgia', serif;
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
-    /* Font Weights */
-    --font-normal: 400;
-    --font-medium: 500;
-    --font-semibold: 600;
-    --font-bold: 700;
-
-    /* Font Sizes - Fluid Typography (clamp) */
-    --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
-    /* 12-14px */
-    --text-sm: clamp(0.875rem, 0.8rem + 0.3vw, 1rem);
-    /* 14-16px */
-    --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
-    /* 16-18px */
-    --text-lg: clamp(1.125rem, 1.05rem + 0.375vw, 1.25rem);
-    /* 18-20px */
-    --text-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
-    /* 20-24px */
-    --text-2xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
-    /* 24-32px */
-    --text-3xl: clamp(1.875rem, 1.5rem + 1.5vw, 2.5rem);
-    /* 30-40px */
-    --text-4xl: clamp(2.25rem, 1.75rem + 2vw, 3rem);
-    /* 36-48px */
-    --text-5xl: clamp(3rem, 2rem + 3vw, 4rem);
-    /* 48-64px */
-    --text-6xl: clamp(3.75rem, 2.5rem + 4vw, 5rem);
-    /* 60-80px */
-    --text-7xl: clamp(4.5rem, 3rem + 5vw, 6rem);
-    /* 72-96px */
-    --text-8xl: clamp(6rem, 4rem + 7vw, 8rem);
-    /* 96-128px */
-
-    /* Line Heights */
-    --leading-tight: 1.25;
-    --leading-snug: 1.375;
-    --leading-normal: 1.5;
-    --leading-relaxed: 1.7;
-    --leading-loose: 1.8;
-
-    /* Letter Spacing */
-    --tracking-tight: -0.02em;
-    --tracking-normal: 0;
-    --tracking-wide: 0.02em;
-    --tracking-wider: 0.05em;
-
-    /* Spacing Scale */
+    /* Spacing Scale (8px rhythm) */
     --space-1: 0.25rem;
     /* 4px */
     --space-2: 0.5rem;
@@ -368,54 +339,29 @@
     /* 24px */
     --space-8: 2rem;
     /* 32px */
-    --space-10: 2.5rem;
-    /* 40px */
     --space-12: 3rem;
     /* 48px */
     --space-16: 4rem;
     /* 64px */
-    --space-20: 5rem;
-    /* 80px */
     --space-24: 6rem;
     /* 96px */
 
     /* Border Radius */
-    --radius-sm: 0.25rem;
-    /* 4px */
-    --radius-md: 0.375rem;
-    /* 6px */
-    --radius-lg: 0.5rem;
-    /* 8px */
-    --radius-xl: 0.75rem;
-    /* 12px */
-    --radius-2xl: 1rem;
-    /* 16px */
     --radius-memorial: 0.5rem;
-    /* 8px - Brand default */
+    /* 8px */
     --radius-memorial-lg: 0.75rem;
-    /* 12px - Cards */
-    --radius-full: 9999px;
-    /* Pills/badges */
+    /* 12px */
 
-    /* Animation */
-    --transition-fast: 150ms;
-    --transition-base: 250ms;
-    --transition-slow: 350ms;
-    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-    --ease-out: cubic-bezier(0, 0, 0.2, 1);
-    --ease-in: cubic-bezier(0.4, 0, 1, 1);
-    --ease-memorial: cubic-bezier(0.4, 0, 0.2, 1);
+    /* Layout Constraints */
+    --container-max: 1280px;
+    --sidebar-width: 240px;
+    --nav-height: 64px;
 
-    /* Z-Index */
-    --z-base: 0;
-    --z-dropdown: 10;
-    --z-sticky: 20;
-    --z-fixed: 30;
-    --z-navbar: 50;
-    --z-modal-backdrop: 100;
-    --z-modal: 110;
-    --z-popover: 120;
-    --z-tooltip: 130;
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-card-hover: 0 12px 24px -4px rgba(0, 0, 0, 0.14);
   }
 
   /* Dark Mode Tokens */
@@ -425,12 +371,9 @@
     --memorialDark-text: #FFFBF4;
     --memorialDark-textSecondary: #C8BFB0;
     --memorialDark-accent: #D8CFBC;
-
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-    --shadow-card-hover: 0 12px 24px -4px rgba(0, 0, 0, 0.5);
+    --memorialDark-border: #3F3F36;
+    --memorialDark-sidebarBg: #11120D;
+    --memorialDark-sidebarHover: #1A1B16;
   }
 
   /* Top Navigation */
@@ -473,14 +416,6 @@
   .dashboard-content {
     @apply mx-auto px-4 py-6;
     max-width: 1280px;
-  }
-
-  /* Stats Card */
-  .stats-card {
-    @apply bg-memorial-surface dark:bg-memorialDark-surface;
-    @apply border border-memorial-borderLight dark:border-memorialDark-border;
-    @apply rounded-memorial-lg p-6;
-    @apply flex items-center gap-4;
   }
 
   /* Profile Dropdown */

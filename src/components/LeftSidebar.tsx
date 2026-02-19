@@ -78,7 +78,7 @@ function SidebarSection({ title, children, defaultOpen = true }) {
 function SidebarItem({ href, label, icon: Icon, badge, highlight, disabled = false, active, onClose }: { href: string; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; badge?: string | null; highlight?: boolean; disabled?: boolean; active: boolean; onClose?: () => void }) {
     const content = (
         <>
-            <Icon size={20} className="sidebar-item-icon" />
+            <Icon size={18} className="sidebar-item-icon" />
             <span className="sidebar-item-label">{label}</span>
             {badge && <span className="sidebar-item-badge">{badge}</span>}
         </>

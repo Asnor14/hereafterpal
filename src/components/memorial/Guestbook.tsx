@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Heart, X, MessageCircle, Users, Mail, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Available roles - Only Mom, Dad, Stranger
 const ROLES = [
     { value: 'Mom', label: 'Mom', unique: true },
     { value: 'Dad', label: 'Dad', unique: true },
-    { value: 'Stranger', label: 'Stranger', unique: false },
+    { value: 'Stranger', label: 'Guest / Friend', unique: false },
 ];
 
 // Envelope SVG Component
@@ -76,15 +78,16 @@ function EnvelopeIcon({ isOpen }) {
 }
 
 // Single Envelope Card Component
-function EnvelopeCard({ role, messages, onOpen }) {
+function EnvelopeCard({ role, messages, onOpen, isVerified }) {
     const [isHovered, setIsHovered] = useState(false);
     const messageCount = messages.length;
+    const isLocked = (role === 'Mom' || role === 'Dad') && !isVerified;
 
     // Get display label
     const getLabel = () => {
         if (role === 'Mom') return 'From: Mom';
         if (role === 'Dad') return 'From: Dad';
-        return `From: Strangers (${messageCount})`;
+        return `From: Guests (${messageCount})`;
     };
 
     return (
@@ -94,10 +97,15 @@ function EnvelopeCard({ role, messages, onOpen }) {
             onMouseLeave={() => setIsHovered(false)}
             whileHover={{ y: -8, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="flex flex-col items-center gap-3 p-4 md:p-6 rounded-memorial border border-memorial-border dark:border-memorialDark-border bg-memorial-surface dark:bg-memorialDark-surface hover:border-memorial-accent dark:hover:border-memorialDark-accent transition-all duration-300 cursor-pointer group w-[140px] md:w-[180px]"
+            className="flex flex-col items-center justify-between gap-3 p-4 md:p-6 rounded-memorial border border-memorial-border dark:border-memorialDark-border bg-memorial-surface dark:bg-memorialDark-surface hover:border-memorial-accent dark:hover:border-memorialDark-accent transition-all duration-300 cursor-pointer group w-[140px] md:w-[200px] h-[180px] md:h-[220px]"
         >
-            <div className="relative">
+            <div className="relative flex-1 flex items-center justify-center">
                 <EnvelopeIcon isOpen={isHovered} />
+                {isLocked && (
+                    <div className="absolute top-0 right-0 p-1 bg-black/10 dark:bg-white/10 rounded-full">
+                        <X size={12} className="text-memorial-accent rotate-45" />
+                    </div>
+                )}
                 {messageCount > 0 && role === 'Stranger' && (
                     <div className="absolute -top-1 -right-1 w-5 h-5 md:w-6 md:h-6 bg-memorial-accent dark:bg-memorialDark-accent text-white dark:text-memorialDark-bg text-xs font-bold rounded-full flex items-center justify-center">
                         {messageCount > 9 ? '9+' : messageCount}
@@ -109,14 +117,14 @@ function EnvelopeCard({ role, messages, onOpen }) {
                     </div>
                 )}
             </div>
-            <span className="text-sm md:text-base font-medium text-memorial-text dark:text-memorialDark-text text-center group-hover:text-memorial-accent dark:group-hover:text-memorialDark-accent transition-colors">
-                {getLabel()}
-            </span>
-            {messageCount === 0 && (
-                <span className="text-xs text-memorial-textTertiary dark:text-memorialDark-textTertiary">
-                    No letters yet
+            <div className="space-y-1 w-full text-center">
+                <span className="text-sm md:text-base font-medium text-memorial-text dark:text-memorialDark-text block group-hover:text-memorial-accent dark:group-hover:text-memorialDark-accent transition-colors">
+                    {getLabel()}
                 </span>
-            )}
+                <span className="text-xs text-memorial-textTertiary dark:text-memorialDark-textTertiary block">
+                    {isLocked ? '🔒 Password Required' : (messageCount === 0 ? 'No letters yet' : `${messageCount} message${messageCount > 1 ? 's' : ''}`)}
+                </span>
+            </div>
         </motion.button>
     );
 }
@@ -212,9 +220,29 @@ function LetterModal({ role, messages, isOpen, onClose }) {
     );
 }
 
-export default function Guestbook({ messages, onSubmit, isLoading }) {
+export default function Guestbook({
+    messages,
+    onSubmit,
+    isLoading,
+    isLoggedIn = false,
+    memorialId = '',
+    memorial = null,
+    currentUserId = null,
+}: {
+    messages: any[];
+    onSubmit: any;
+    isLoading: boolean;
+    isLoggedIn?: boolean;
+    memorialId?: string;
+    memorial?: any;
+    currentUserId?: string | null;
+}) {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedRole, setSelectedRole] = useState(null);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [pendingRole, setPendingRole] = useState<string | null>(null);
+    const [verifiedRoles, setVerifiedRoles] = useState<string[]>([]);
+    const [rolePassword, setRolePassword] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         message: '',
@@ -222,6 +250,60 @@ export default function Guestbook({ messages, onSubmit, isLoading }) {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [takenRoles, setTakenRoles] = useState([]);
+    const supabase = createClient();
+
+    // 1. Auto-verify creator role OR collaborator role from memorial_access
+    useEffect(() => {
+        const verifyAccess = async () => {
+            if (!isLoggedIn || !currentUserId || !memorial) return;
+
+            let detectedRole = null;
+
+            // Check if creator
+            if (currentUserId === memorial.user_id && memorial.creator_relationship) {
+                detectedRole = memorial.creator_relationship;
+            } else {
+                // Check if collaborator in memorial_access
+                const { data: access } = await supabase
+                    .from('memorial_access')
+                    .select('role')
+                    .eq('memorial_id', memorial.id)
+                    .eq('user_id', currentUserId)
+                    .single();
+
+                if (access) {
+                    detectedRole = access.role;
+                }
+            }
+
+            if (detectedRole) {
+                setVerifiedRoles(prev => prev.includes(detectedRole) ? prev : [...prev, detectedRole]);
+                // AUTO-FILL form defaults if they are verified
+                setFormData(prev => ({
+                    ...prev,
+                    role: detectedRole,
+                    name: detectedRole
+                }));
+            }
+        };
+
+        verifyAccess();
+    }, [isLoggedIn, currentUserId, memorial, supabase]);
+
+    // Role-password logic helper
+    const getRolePassword = (role: string) => {
+        if (!memorial) return null;
+
+        const creatorRole = memorial.creator_relationship;
+        const otherRole = creatorRole === 'Mom' ? 'Dad' : creatorRole === 'Dad' ? 'Mom' : null;
+
+        // The Family Key is always used to unlock the 'other' role
+        if (role === otherRole) return memorial.family_password;
+
+        // Special case: If the creator role itself is being accessed (maybe by someone else with the key?)
+        // The user's requirement implies the key is for the second member.
+        return null;
+    };
 
     // Group messages by role
     const groupedMessages = {
@@ -240,6 +322,24 @@ export default function Guestbook({ messages, onSubmit, isLoading }) {
             setTakenRoles([...new Set(taken)]);
         }
     }, [messages]);
+
+    const handleRoleVerification = (role: string) => {
+        if (verifiedRoles.includes(role)) return true;
+        setPendingRole(role);
+        setIsPasswordModalOpen(true);
+        return false;
+    };
+
+    const handleOpenRoleMessages = (role: string) => {
+        if (role === 'Stranger') {
+            setSelectedRole(role);
+            return;
+        }
+
+        if (handleRoleVerification(role)) {
+            setSelectedRole(role);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -262,14 +362,74 @@ export default function Guestbook({ messages, onSubmit, isLoading }) {
     };
 
     const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        // If trying to select Mom/Dad, trigger password check ONLY if not already verified
+        if (name === 'role' && (value === 'Mom' || value === 'Dad')) {
+            if (!verifiedRoles.includes(value)) {
+                setPendingRole(value);
+                setIsPasswordModalOpen(true);
+                return;
+            } else {
+                // If already verified, auto-fill the name
+                setFormData(prev => ({
+                    ...prev,
+                    role: value,
+                    name: value // Auto-fill name as "Mom" or "Dad"
+                }));
+                return;
+            }
+        }
+
+        // Handle name auto-fill if switching back to Stranger (optional: clear it if it was Mom/Dad)
+        if (name === 'role' && value === 'Stranger') {
+            setFormData(prev => ({
+                ...prev,
+                role: value,
+                name: prev.name === 'Mom' || prev.name === 'Dad' ? '' : prev.name
+            }));
+            return;
+        }
+
         setFormData({
             ...formData,
-            [e.target.name]: e.target.value,
+            [name]: value,
         });
+    };
+
+    const handlePasswordSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const requiredPassword = getRolePassword(pendingRole || '');
+
+        if (pendingRole && rolePassword === requiredPassword) {
+            setVerifiedRoles(prev => [...prev, pendingRole]);
+            // If they are on the form, update form role and AUTO-FILL NAME
+            if (isFormOpen) {
+                setFormData(prev => ({
+                    ...prev,
+                    role: pendingRole,
+                    name: pendingRole // Auto-fill name
+                }));
+            } else {
+                // If they were just trying to read, open the modal
+                setSelectedRole(pendingRole);
+            }
+            setIsPasswordModalOpen(false);
+            setRolePassword('');
+            setPendingRole(null);
+            toast.success(`Verified as ${pendingRole}!`);
+        } else {
+            toast.error('Incorrect password for this role');
+        }
     };
 
     const isRoleDisabled = (roleValue) => {
         const roleConfig = ROLES.find(r => r.value === roleValue);
+
+        // If the current user is already verified for this role, IT IS NOT DISABLED
+        if (verifiedRoles.includes(roleValue)) return false;
+
+        // Otherwise, if it's unique and taken by someone else, disable it
         return roleConfig?.unique && takenRoles.includes(roleValue);
     };
 
@@ -289,17 +449,20 @@ export default function Guestbook({ messages, onSubmit, isLoading }) {
                         <EnvelopeCard
                             role="Mom"
                             messages={groupedMessages.Mom}
-                            onOpen={() => setSelectedRole('Mom')}
+                            onOpen={() => handleOpenRoleMessages('Mom')}
+                            isVerified={verifiedRoles.includes('Mom')}
                         />
                         <EnvelopeCard
                             role="Dad"
                             messages={groupedMessages.Dad}
-                            onOpen={() => setSelectedRole('Dad')}
+                            onOpen={() => handleOpenRoleMessages('Dad')}
+                            isVerified={verifiedRoles.includes('Dad')}
                         />
                         <EnvelopeCard
                             role="Stranger"
                             messages={groupedMessages.Stranger}
-                            onOpen={() => setSelectedRole('Stranger')}
+                            onOpen={() => handleOpenRoleMessages('Stranger')}
+                            isVerified={true}
                         />
                     </div>
                 )}
@@ -414,25 +577,35 @@ export default function Guestbook({ messages, onSubmit, isLoading }) {
                                             className="block text-sm font-medium text-memorial-textSecondary dark:text-memorialDark-textSecondary mb-2"
                                         >
                                             <Users size={14} className="inline mr-1" />
-                                            Your Relationship
+                                            Posting As
                                         </label>
                                         <select
                                             id="floating-role"
                                             name="role"
                                             value={formData.role}
                                             onChange={handleChange}
-                                            className="w-full px-4 py-3 rounded-memorial bg-memorial-bg dark:bg-memorialDark-bg border border-memorial-divider dark:border-memorialDark-divider text-memorial-text dark:text-memorialDark-text focus:border-memorial-accent dark:focus:border-memorialDark-accent transition-colors duration-200 text-sm"
+                                            disabled={!isLoggedIn}
+                                            className="w-full px-4 py-3 rounded-memorial bg-memorial-bg dark:bg-memorialDark-bg border border-memorial-divider dark:border-memorialDark-divider text-memorial-text dark:text-memorialDark-text focus:border-memorial-accent dark:focus:border-memorialDark-accent transition-colors duration-200 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            {ROLES.map((role) => (
-                                                <option
-                                                    key={role.value}
-                                                    value={role.value}
-                                                    disabled={isRoleDisabled(role.value)}
-                                                >
-                                                    {role.label} {isRoleDisabled(role.value) ? '(Already claimed)' : ''}
-                                                </option>
-                                            ))}
+                                            <option value="Stranger">Guest / Friend</option>
+                                            {/* Only show Mom/Dad roles if they are already verified/joined */}
+                                            {verifiedRoles.includes('Mom') && <option value="Mom">Mom</option>}
+                                            {verifiedRoles.includes('Dad') && <option value="Dad">Dad</option>}
+
+                                            {/* If not verified, but role is available, let them select it (triggers verification) */}
+                                            {!verifiedRoles.includes('Mom') && !takenRoles.includes('Mom') && <option value="Mom">Claim Role: Mom</option>}
+                                            {!verifiedRoles.includes('Dad') && !takenRoles.includes('Dad') && <option value="Dad">Claim Role: Dad</option>}
                                         </select>
+                                        {!isLoggedIn && (
+                                            <p className="mt-1 text-[10px] text-memorial-textSecondary italic">
+                                                Login required to claim family roles (Mom/Dad)
+                                            </p>
+                                        )}
+                                        {isLoggedIn && !verifiedRoles.length && (
+                                            <p className="mt-1 text-[10px] text-memorial-textSecondary italic">
+                                                Select a role to verify and post.
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* Message Textarea */}
@@ -477,6 +650,57 @@ export default function Guestbook({ messages, onSubmit, isLoading }) {
                             </div>
                         </motion.div>
                     </>
+                )}
+            </AnimatePresence>
+
+            {/* Role Password Verification Modal */}
+            <AnimatePresence>
+                {isPasswordModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-memorial-bg dark:bg-memorialDark-bg p-6 rounded-memorial shadow-memorial max-w-sm w-full border border-memorial-divider dark:border-memorialDark-divider"
+                        >
+                            <h3 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text mb-2">
+                                Role Verification
+                            </h3>
+                            <p className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary mb-6">
+                                Please enter the password provided by the memorial creator to post as <strong>{pendingRole}</strong>.
+                            </p>
+
+                            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                                <input
+                                    type="password"
+                                    value={rolePassword}
+                                    onChange={(e) => setRolePassword(e.target.value)}
+                                    placeholder="Enter password"
+                                    autoFocus
+                                    className="w-full bg-white dark:bg-memorialDark-surface border border-memorial-divider dark:border-memorialDark-divider rounded-memorial px-4 py-3 text-memorial-text dark:text-memorialDark-text outline-none focus:ring-2 focus:ring-memorial-accent/20"
+                                />
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsPasswordModalOpen(false);
+                                            setRolePassword('');
+                                            setPendingRole(null);
+                                        }}
+                                        className="flex-1 py-3 text-sm font-medium text-memorial-textSecondary hover:text-memorial-text transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 py-3 bg-memorial-accent text-white rounded-memorial text-sm font-medium hover:opacity-90 transition-opacity"
+                                    >
+                                        Verify
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
         </>

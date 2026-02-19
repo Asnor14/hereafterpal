@@ -3,15 +3,19 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { motion } from 'framer-motion'
-import { Plus, Heart, Eye, MessageSquare, Image, Upload, Mail } from 'lucide-react'
+import { Plus, Heart, Eye, MessageSquare, Image, Upload, Mail, UserPlus, Shield } from 'lucide-react'
 import DashboardLayout from '@/components/DashboardLayout'
 import WelcomeBanner from '@/components/WelcomeBanner'
 import QuickActionCard from '@/components/QuickActionCard'
 import MemorialCard from '@/components/MemorialCard'
 import StatsCard from '@/components/StatsCard'
 import ActivityFeed from '@/components/ActivityFeed'
+import ShareLinkModal from '@/components/ShareLinkModal'
+import JoinMemorialModal from '@/components/JoinMemorialModal'
+import { isPaidPlan } from '@/lib/planFeatures'
 import type { User } from '@supabase/supabase-js'
 
 // Skeleton component for loading state
@@ -42,9 +46,13 @@ function SectionHeader({ title, action }: { title: string; action?: React.ReactN
 
 function DashboardContent() {
   const supabase = createClient()
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [memorials, setMemorials] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [userPlan, setUserPlan] = useState<string | null>(null)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
   const [stats, setStats] = useState({
     totalMemorials: 0,
     totalViews: 0,
@@ -52,37 +60,85 @@ function DashboardContent() {
     totalPhotos: 0,
   })
 
-  useEffect(() => {
-    const fetchUserAndMemorials = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        return
-      }
-      setUser(user)
+  // Refactor fetch into a function so we can call it after joining
+  const fetchUserAndMemorials = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
-      const { data, error } = await supabase
-        .from('memorials')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        toast.error('Could not fetch memorials.')
-      } else {
-        setMemorials(data || [])
-        setStats({
-          totalMemorials: data?.length || 0,
-          totalViews: 0, // Placeholder
-          totalMessages: 0, // Placeholder
-          totalPhotos: 0, // Placeholder
-        })
-      }
-      setLoading(false)
+    if (!session) {
+      toast.error('Please login to access the dashboard')
+      router.push('/login')
+      return
     }
+
+    const user = session.user
+    setUser(user)
+
+    // Fetch Plan
+    try {
+      const subRes = await fetch(`/api/subscriptions?user_id=${user.id}`);
+      if (subRes.ok) {
+        const data = await subRes.json();
+        if (Array.isArray(data) && data.length > 0 && data[0].status === 'active') {
+          setUserPlan(data[0].plan);
+        } else {
+          setUserPlan('free');
+        }
+      } else {
+        setUserPlan('free');
+      }
+    } catch (err) {
+      console.error('Error fetching plan:', err);
+      setUserPlan('free');
+    }
+
+    // 1. Fetch Owned Memorials
+    const { data: owned, error: ownedError } = await supabase
+      .from('memorials')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    // 2. Fetch Shared Memorials (via memorial_access)
+    const { data: accessRecords, error: sharedError } = await supabase
+      .from('memorial_access')
+      .select(`
+        memorial_id,
+        role,
+        memorials:memorial_id (*)
+      `)
+      .eq('user_id', user.id);
+
+    if (ownedError || sharedError) {
+      toast.error('Could not fetch memorials.')
+    } else {
+      const shared = (accessRecords || []).map((record: any) => ({
+        ...record.memorials,
+        isShared: true,
+        access_role: record.role
+      }));
+
+      const allMemorials = [...(owned || []), ...shared].sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setMemorials(allMemorials)
+      setStats({
+        totalMemorials: allMemorials.length,
+        totalViews: 0, // Placeholder
+        totalMessages: 0, // Placeholder
+        totalPhotos: 0, // Placeholder
+      })
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
     fetchUserAndMemorials()
   }, [supabase])
+
+  const isPaid = isPaidPlan(userPlan)
 
   return (
     <div className="dashboard-home">
@@ -90,13 +146,19 @@ function DashboardContent() {
       <WelcomeBanner user={user} memorialCount={stats.totalMemorials} />
 
       {/* Quick Actions Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-8">
         <QuickActionCard
           icon={Plus}
           title="Create Memorial"
           description="Start a new tribute"
           href="/create-memorial"
           variant="primary"
+        />
+        <QuickActionCard
+          icon={UserPlus}
+          title="Join Memorial"
+          description="Use a Family Key"
+          onClick={() => setIsJoinModalOpen(true)}
         />
         <QuickActionCard
           icon={Upload}
@@ -107,8 +169,27 @@ function DashboardContent() {
           icon={Mail}
           title="Invite Friends"
           description="Share a memorial link"
+          onClick={() => setIsShareModalOpen(true)}
         />
       </div>
+
+      {/* Share Modal */}
+      <ShareLinkModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        memorials={memorials.filter(m => !m.isShared)}
+        isPaid={isPaid}
+        onUpdate={(id, updates) => {
+          setMemorials(prev => prev.map(m => m.id === id ? { ...m, ...updates } : m));
+        }}
+      />
+
+      {/* Join Modal */}
+      <JoinMemorialModal
+        isOpen={isJoinModalOpen}
+        onClose={() => setIsJoinModalOpen(false)}
+        onSuccess={() => fetchUserAndMemorials()}
+      />
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

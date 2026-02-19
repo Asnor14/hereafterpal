@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import MemorialNav from '@/components/memorial/MemorialNav';
 import MemorialHero from '@/components/memorial/MemorialHero';
 import Timeline from '@/components/memorial/Timeline';
 import MemoryLane from '@/components/memorial/MemoryLane';
@@ -20,7 +19,26 @@ export default function MemorialProfilePage() {
   const [memorial, setMemorial] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState('home');
+
+  // Check Auth State
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+      setCurrentUserId(session?.user?.id || null);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+      setCurrentUserId(session?.user?.id || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
 
   // Fetch memorial data
   useEffect(() => {
@@ -227,8 +245,7 @@ export default function MemorialProfilePage() {
 
   return (
     <div className="min-h-screen bg-memorial-bg dark:bg-memorialDark-bg pb-20 md:pb-8">
-      {/* Navigation */}
-      <MemorialNav memorialId={memorialId} activeSection={activeSection} />
+      {/* Navigation is now handled by the global Navbar component in layout.tsx */}
 
       {/* Hero Section - Pass actual memorial data */}
       <section id="home" className="scroll-mt-20">
@@ -269,6 +286,10 @@ export default function MemorialProfilePage() {
               messages={messages}
               onSubmit={handleGuestbookSubmit}
               isLoading={false}
+              isLoggedIn={isLoggedIn}
+              memorialId={typeof memorialId === 'string' ? memorialId : memorialId?.[0] || ''}
+              memorial={memorial}
+              currentUserId={currentUserId}
             />
           </div>
         </section>

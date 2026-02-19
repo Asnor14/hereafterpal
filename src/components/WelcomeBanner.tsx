@@ -8,10 +8,10 @@ export default function WelcomeBanner({ user, memorialCount = 0 }) {
     return (
         <div className="welcome-banner">
             <div className="welcome-content">
-                <h1 className="welcome-title">
+                <h2 className="welcome-title text-h2 font-serif">
                     Welcome back, {userName}
-                </h1>
-                <p className="welcome-subtitle">
+                </h2>
+                <p className="welcome-subtitle text-body">
                     {memorialCount > 0
                         ? `You have ${memorialCount} memorial${memorialCount > 1 ? 's' : ''} preserving precious memories.`
                         : 'Start preserving precious memories by creating your first memorial.'}
