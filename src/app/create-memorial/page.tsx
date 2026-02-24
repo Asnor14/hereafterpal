@@ -1087,11 +1087,11 @@ export default function CreateMemorialPage() {
                           Click to upload a voice sample
                         </span>
                         <span className="text-xs text-memorial-textTertiary dark:text-memorialDark-textTertiary">
-                          MP3 only (max 20MB)
+                          Audio file (max 20MB)
                         </span>
                         <input
                           type="file"
-                          accept=".mp3,audio/mpeg"
+                          accept="audio/*"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0]

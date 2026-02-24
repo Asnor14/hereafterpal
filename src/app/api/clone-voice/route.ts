@@ -1,41 +1,107 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { v2 as cloudinary } from 'cloudinary';
 
-async function pollTaskStatus(taskId: string, apiKey: string, maxAttempts = 30, delayMs = 2000) {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const response = await fetch(`https://api.ai33.pro/v1/task/${taskId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'xi-api-key': apiKey,
-            },
-        });
+cloudinary.config({
+    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-        if (!response.ok) {
-            throw new Error('Failed to check task status');
-        }
+function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-        const taskData = await response.json();
+async function createFishModel(apiKey: string, file: File, voiceName: string) {
+    const createModelData = new FormData();
+    createModelData.append('type', 'tts');
+    createModelData.append('title', voiceName || 'Memorial Voice Clone');
+    createModelData.append('visibility', 'private');
+    createModelData.append('train_mode', 'fast');
+    createModelData.append('enhance_audio_quality', 'true');
+    createModelData.append('voices', file, file.name);
 
-        if (taskData.status === 'done') {
-            return taskData;
-        }
+    const response = await fetch('https://api.fish.audio/model', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: createModelData,
+    });
 
-        if (taskData.status === 'error' || taskData.error_message) {
-            throw new Error(taskData.error_message || 'Voice generation failed');
-        }
-
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create Fish model: ${errorText}`);
     }
 
-    throw new Error('Voice generation timed out');
+    const data = await response.json();
+    const modelId = String(data?._id || '');
+    if (!modelId) {
+        throw new Error('Fish model creation did not return a model ID');
+    }
+
+    return modelId;
+}
+
+async function synthesizeWithFish(apiKey: string, modelId: string, text: string) {
+    let lastError = 'Fish TTS failed';
+
+    for (let attempt = 0; attempt < 12; attempt++) {
+        const response = await fetch('https://api.fish.audio/v1/tts', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                model: 's1',
+            },
+            body: JSON.stringify({
+                text,
+                reference_id: modelId,
+                format: 'mp3',
+            }),
+        });
+
+        if (response.ok) {
+            return Buffer.from(await response.arrayBuffer());
+        }
+
+        lastError = await response.text();
+        await sleep(2500);
+    }
+
+    throw new Error(`Failed to generate cloned voice audio: ${lastError}`);
+}
+
+async function uploadAudioToCloudinary(audioBuffer: Buffer) {
+    if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET || !process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+        return null;
+    }
+
+    return new Promise<string>((resolve, reject) => {
+        const upload = cloudinary.uploader.upload_stream(
+            {
+                folder: 'memorial_voice',
+                resource_type: 'video',
+                format: 'mp3',
+            },
+            (error, result) => {
+                if (error || !result?.secure_url) {
+                    reject(error || new Error('Cloudinary upload failed'));
+                    return;
+                }
+                resolve(result.secure_url);
+            }
+        );
+
+        upload.end(audioBuffer);
+    });
 }
 
 export async function POST(request: NextRequest) {
     try {
-        const apiKey = process.env.AI33PRO_API_KEY;
+        const apiKey = process.env.FISH_API_KEY;
         if (!apiKey) {
             return NextResponse.json(
-                { error: 'Voice API not configured' },
+                { error: 'Fish API not configured' },
                 { status: 500 }
             );
         }
@@ -44,7 +110,6 @@ export async function POST(request: NextRequest) {
         const file = formData.get('file') as File | null;
         const text = String(formData.get('text') || '').trim();
         const voiceName = String(formData.get('voiceName') || '').trim();
-        const gender = String(formData.get('gender') || '').toLowerCase();
 
         if (!file) {
             return NextResponse.json(
@@ -74,101 +139,32 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const isMp3ByName = file.name.toLowerCase().endsWith('.mp3');
-        const isMp3ByType = file.type === 'audio/mpeg' || file.type === 'audio/mp3';
-        if (!isMp3ByName && !isMp3ByType) {
+        if (!file.type.startsWith('audio/')) {
             return NextResponse.json(
-                { error: 'Only MP3 files are supported for voice cloning' },
+                { error: 'Only audio files are supported for voice cloning' },
                 { status: 400 }
             );
         }
 
-        const cloneFormData = new FormData();
-        cloneFormData.append('file', file, file.name);
-        cloneFormData.append('voice_name', voiceName || 'Memorial Voice Clone');
-        cloneFormData.append('preview_text', text.slice(0, 200));
-        cloneFormData.append('language_tag', 'English');
-        cloneFormData.append('need_noise_reduction', 'true');
-        if (gender === 'male' || gender === 'female') {
-            cloneFormData.append('gender_tag', gender);
+        const modelId = await createFishModel(apiKey, file, voiceName);
+        const audioBuffer = await synthesizeWithFish(apiKey, modelId, text);
+
+        let audioUrl: string | null = null;
+        try {
+            audioUrl = await uploadAudioToCloudinary(audioBuffer);
+        } catch (uploadError) {
+            console.error('Cloudinary upload failed, falling back to data URL:', uploadError);
         }
-
-        const cloneResponse = await fetch('https://api.ai33.pro/v1m/voice/clone', {
-            method: 'POST',
-            headers: {
-                'xi-api-key': apiKey,
-            },
-            body: cloneFormData,
-        });
-
-        if (!cloneResponse.ok) {
-            const errorText = await cloneResponse.text();
-            return NextResponse.json(
-                { error: `Failed to clone voice: ${errorText}` },
-                { status: 500 }
-            );
-        }
-
-        const cloneData = await cloneResponse.json();
-        const clonedVoiceId = String(cloneData.cloned_voice_id || '');
-        if (!cloneData.success || !clonedVoiceId) {
-            return NextResponse.json(
-                { error: 'Voice clone did not return a valid voice ID' },
-                { status: 500 }
-            );
-        }
-
-        const ttsResponse = await fetch('https://api.ai33.pro/v1m/task/text-to-speech', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'xi-api-key': apiKey,
-            },
-            body: JSON.stringify({
-                text,
-                model: 'speech-2.6-hd',
-                voice_setting: {
-                    voice_id: clonedVoiceId,
-                    vol: 1,
-                    pitch: 0,
-                    speed: 1,
-                },
-                language_boost: 'Auto',
-            }),
-        });
-
-        if (!ttsResponse.ok) {
-            const errorText = await ttsResponse.text();
-            return NextResponse.json(
-                { error: `Failed to generate cloned voice audio: ${errorText}` },
-                { status: 500 }
-            );
-        }
-
-        const ttsData = await ttsResponse.json();
-        if (!ttsData.success || !ttsData.task_id) {
-            return NextResponse.json(
-                { error: 'Failed to create cloned voice task' },
-                { status: 500 }
-            );
-        }
-
-        const taskResult = await pollTaskStatus(ttsData.task_id, apiKey);
-        const audioUrl = taskResult.metadata?.audio_url;
 
         if (!audioUrl) {
-            return NextResponse.json(
-                { error: 'No audio URL returned from cloned voice task' },
-                { status: 500 }
-            );
+            const base64Audio = audioBuffer.toString('base64');
+            audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
         }
 
         return NextResponse.json({
             success: true,
             audioUrl,
-            taskId: ttsData.task_id,
-            clonedVoiceId,
-            creditsRemaining: ttsData.ec_remain_credits,
+            clonedVoiceId: modelId,
         });
     } catch (error) {
         console.error('Clone voice error:', error);
