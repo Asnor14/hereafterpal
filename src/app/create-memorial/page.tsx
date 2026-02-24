@@ -53,8 +53,9 @@ export default function CreateMemorialPage() {
   const [voiceProgress, setVoiceProgress] = useState(0)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
 
-  // Clone Voice state (frontend only for now)
+  // Clone Voice state
   const [cloneVoiceAudio, setCloneVoiceAudio] = useState(null)
+  const [cloneVoiceName, setCloneVoiceName] = useState('')
   const [cloneVoiceText, setCloneVoiceText] = useState('')
 
   // Validation errors
@@ -274,6 +275,92 @@ export default function CreateMemorialPage() {
     }
   }
 
+  // Generate Clone Voice
+  const handleGenerateCloneVoice = async () => {
+    if (!cloneVoiceAudio) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Voice Sample Required',
+        text: 'Please upload an MP3 sample first',
+        confirmButtonColor: '#9b8b6f',
+      })
+      return
+    }
+
+    if (!cloneVoiceText.trim()) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Message Required',
+        text: 'Please enter a message for the cloned voice',
+        confirmButtonColor: '#9b8b6f',
+      })
+      return
+    }
+
+    if (cloneVoiceText.length > 5000) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Message Too Long',
+        text: 'Clone voice message must be 5000 characters or less',
+        confirmButtonColor: '#9b8b6f',
+      })
+      return
+    }
+
+    setIsGeneratingVoice(true)
+    setVoiceProgress(0)
+
+    const progressInterval = setInterval(() => {
+      setVoiceProgress(prev => {
+        if (prev >= 90) return 90
+        return prev + 5
+      })
+    }, 500)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', cloneVoiceAudio)
+      formData.append('text', cloneVoiceText.trim())
+      formData.append('voiceName', cloneVoiceName.trim() || `${name || 'Memorial'} Voice`)
+      formData.append('gender', gender || 'female')
+
+      const response = await fetch('/api/clone-voice', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to clone voice')
+      }
+
+      setGeneratedAudioUrl(data.audioUrl)
+      setVoiceProgress(100)
+      Swal.fire({
+        icon: 'success',
+        title: 'Cloned Voice Ready!',
+        text: 'Your cloned voice tribute has been generated',
+        confirmButtonColor: '#9b8b6f',
+        timer: 2000,
+      })
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Clone Failed',
+        text: error.message,
+        confirmButtonColor: '#9b8b6f',
+      })
+      setVoiceProgress(0)
+    } finally {
+      clearInterval(progressInterval)
+      setTimeout(() => {
+        setIsGeneratingVoice(false)
+        setVoiceProgress(0)
+      }, 1000)
+    }
+  }
+
   // Audio playback controls
   const toggleAudioPlayback = () => {
     if (!audioRef.current) return
@@ -396,8 +483,13 @@ export default function CreateMemorialPage() {
       }
 
       if (generatedAudioUrl) {
-        aiVoiceMoods[voiceMood] = generatedAudioUrl
+        const selectedMood = voiceType === 'ai-voice' ? voiceMood : 'longing'
+        aiVoiceMoods[selectedMood] = generatedAudioUrl
       }
+
+      const selectedVoiceMessage = voiceType === 'ai-voice'
+        ? voiceMessage.trim()
+        : cloneVoiceText.trim()
 
       const { data, error } = await supabase
         .from('memorials')
@@ -413,7 +505,7 @@ export default function CreateMemorialPage() {
           date_of_passing: dateOfPassing,
           creator_relationship: creatorRelationship,
           // AI Voice fields
-          voice_message: voiceMessage.trim() || null,
+          voice_message: selectedVoiceMessage || null,
           voice_generation_status: generatedAudioUrl ? 'generated' : 'pending',
           ai_voice_moods: aiVoiceMoods,
         })
@@ -873,6 +965,7 @@ export default function CreateMemorialPage() {
                   setVoiceType(e.target.value)
                   // Reset generated audio when switching types
                   setGeneratedAudioUrl(null)
+                  setIsPlayingAudio(false)
                   setCloneVoiceAudio(null)
                 }}
                 className={`w-full ${selectClasses(false)}`}
@@ -1015,6 +1108,22 @@ export default function CreateMemorialPage() {
 
                 {/* Text for Clone Voice */}
                 <div className="space-y-2">
+                  <label htmlFor="cloneVoiceName" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
+                    Voice Name (Optional)
+                  </label>
+                  <input
+                    id="cloneVoiceName"
+                    type="text"
+                    value={cloneVoiceName}
+                    onChange={(e) => setCloneVoiceName(e.target.value)}
+                    className={inputClasses(false)}
+                    placeholder="e.g. Mom Memorial Voice"
+                    maxLength={60}
+                  />
+                </div>
+
+                {/* Text for Clone Voice */}
+                <div className="space-y-2">
                   <label htmlFor="cloneVoiceText" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
                     Message to Speak
                   </label>
@@ -1038,18 +1147,25 @@ export default function CreateMemorialPage() {
                   </div>
                 </div>
 
-                {/* Clone Voice Button (Frontend only - Coming Soon) */}
+                {/* Clone Voice Button */}
                 <button
                   type="button"
-                  disabled={true}
-                  className="w-full px-6 py-3 rounded-memorial bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt border border-memorial-border dark:border-memorialDark-border text-memorial-textSecondary dark:text-memorialDark-textSecondary font-medium opacity-50 cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 min-h-touch"
+                  onClick={handleGenerateCloneVoice}
+                  disabled={isGeneratingVoice || !cloneVoiceAudio || !cloneVoiceText.trim()}
+                  className="w-full px-6 py-3 rounded-memorial bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt border border-memorial-accent dark:border-memorialDark-accent text-memorial-accent dark:text-memorialDark-accent font-medium hover:bg-memorial-accent/10 dark:hover:bg-memorialDark-accent/10 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 min-h-touch"
                 >
-                  <Mic size={18} />
-                  Clone Voice (Coming Soon)
+                  {isGeneratingVoice ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Cloning Voice...
+                    </>
+                  ) : (
+                    <>
+                      <Mic size={18} />
+                      Generate Cloned Voice
+                    </>
+                  )}
                 </button>
-                <p className="text-xs text-center text-memorial-textTertiary dark:text-memorialDark-textTertiary">
-                  Voice cloning feature is currently in development. Stay tuned!
-                </p>
               </div>
             )}
 
@@ -1085,7 +1201,9 @@ export default function CreateMemorialPage() {
                       Voice Preview
                     </p>
                     <p className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary">
-                      {MOOD_OPTIONS.find(m => m.value === voiceMood)?.label || 'Sentimental'}
+                      {voiceType === 'ai-voice'
+                        ? (MOOD_OPTIONS.find(m => m.value === voiceMood)?.label || 'Sentimental')
+                        : 'Cloned Voice'}
                     </p>
                   </div>
                   <Check size={20} className="text-green-500" />
