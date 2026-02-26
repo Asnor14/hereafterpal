@@ -314,10 +314,6 @@ export default function MemorialProfilePage() {
               senderFolders={senderFolders}
               onSubmit={handleGuestbookSubmit}
               isLoading={false}
-              isLoggedIn={isLoggedIn}
-              memorialId={typeof memorialId === 'string' ? memorialId : memorialId?.[0] || ''}
-              memorial={memorial}
-              currentUserId={currentUserId}
             />
           </div>
         </section>

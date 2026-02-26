@@ -408,7 +408,7 @@ export default function EditMemorialPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="family-key">
-                  Family Key (for sharing with Mom/Dad)
+                  Access Key (optional)
                 </label>
                 <div className="relative">
                   <input
@@ -421,7 +421,7 @@ export default function EditMemorialPage() {
                     placeholder="ENTER6"
                   />
                   <p className="mt-1 text-[11px] text-memorial-textSecondary italic">
-                    Share this 6-character key with the other family member to let them join the memorial.
+                    Optional legacy key for access sharing.
                   </p>
                 </div>
               </div>
@@ -560,7 +560,7 @@ export default function EditMemorialPage() {
 
           {/* === TAB 3: Letters of Love === */}
           {tab === 'letters' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {!isPaid && (
                 <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 rounded-memorial flex items-start gap-3">
                   <Lock className="w-5 h-5 text-yellow-600 dark:text-yellow-500 mt-0.5 shrink-0" />
@@ -574,38 +574,65 @@ export default function EditMemorialPage() {
                 </div>
               )}
 
-              {letters.length > 0 ? letters.map((letter) => {
-                const isPrivate = letter.role === 'Mom' || letter.role === 'Dad';
-                const isVerified = !isPrivate || verifiedRoles.includes(letter.role);
+              <div className="p-4 rounded-memorial border border-memorial-border dark:border-memorialDark-border bg-memorial-bg dark:bg-memorialDark-bg">
+                <h4 className="text-sm font-semibold uppercase tracking-widest text-memorial-textSecondary mb-3">
+                  Sender Folders
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                  <input
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    placeholder="Folder name (e.g. Person 1)"
+                    className="input-memorial w-full"
+                  />
+                  <input
+                    type="text"
+                    value={newFolderPassword}
+                    onChange={(e) => setNewFolderPassword(e.target.value)}
+                    placeholder="Password (optional)"
+                    className="input-memorial w-full"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateSenderFolder}
+                    disabled={isCreatingFolder}
+                    className="btn-primary w-full"
+                  >
+                    {isCreatingFolder ? 'Adding...' : 'Add Folder'}
+                  </button>
+                </div>
 
+                <div className="flex flex-wrap gap-2">
+                  {senderFolders.length === 0 && (
+                    <span className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                      No folders yet.
+                    </span>
+                  )}
+                  {senderFolders.map(folder => (
+                    <span
+                      key={folder.id}
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-memorial-border dark:border-memorialDark-border text-sm text-memorial-text dark:text-memorialDark-text bg-memorial-surface dark:bg-memorialDark-surface"
+                    >
+                      {folder.name}
+                      {folder.password_hash && <Lock size={12} className="opacity-70" />}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {letters.length > 0 ? letters.map((letter) => {
                 return (
                   <div key={letter.id} className="flex justify-between items-center bg-memorial-bg dark:bg-memorialDark-bg p-4 rounded-memorial border border-memorial-border dark:border-memorialDark-border">
-                    <div className="flex-1 relative">
-                      {!isVerified ? (
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2 text-memorial-accent/60">
-                            <Lock size={14} />
-                            <span className="text-xs font-semibold uppercase tracking-wider">{letter.role} Letter (Private)</span>
-                          </div>
-                          <p className="text-memorial-text/20 dark:text-memorialDark-text/20 blur-[4px] select-none">
-                            This is a private letter from {letter.role}. Even as the creator, you cannot read this without the Family Key.
-                          </p>
-                          <span className="text-[10px] text-memorial-textTertiary dark:text-memorialDark-textTertiary italic">
-                            - {letter.author_name} (Identity Verified)
-                          </span>
-                        </div>
-                      ) : (
-                        <>
-                          <p className="text-memorial-text dark:text-memorialDark-text mb-1">{letter.message}</p>
-                          <span className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">
-                            - {letter.author_name} {letter.role && <span className="text-xs opacity-60 ml-1">({letter.role})</span>}
-                          </span>
-                        </>
-                      )}
+                    <div className="flex-1">
+                      <p className="text-memorial-text dark:text-memorialDark-text mb-1">{letter.message}</p>
+                      <span className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+                        - {letter.author_name || 'Anonymous'} {letter.sender_name && <span className="text-xs opacity-60 ml-1">({letter.sender_name})</span>}
+                      </span>
                     </div>
                     {isPaid && (
                       <button
-                        onClick={() => handleDeleteLetter(letter.id, letter.role)}
+                        onClick={() => handleDeleteLetter(letter.id)}
                         className="bg-red-600/10 text-red-600 p-2 rounded-memorial hover:bg-red-600 hover:text-white transition-all ml-4 shrink-0"
                         title="Delete message"
                       >
@@ -621,48 +648,6 @@ export default function EditMemorialPage() {
           )}
         </div>
       </div>
-
-      {/* Password Modal */}
-      {isPasswordModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-memorial-surface dark:bg-memorialDark-surface rounded-memorial-lg p-6 max-w-sm w-full shadow-2xl border border-memorial-border dark:border-memorialDark-border relative animate-in fade-in zoom-in duration-200">
-            <button
-              onClick={() => {
-                setIsPasswordModalOpen(false);
-                setPendingRole(null);
-                setRolePassword('');
-              }}
-              className="absolute top-4 right-4 p-2 text-memorial-textSecondary hover:bg-memorial-bg dark:hover:bg-memorialDark-bg rounded-full transition-colors"
-            >
-              <Lock size={20} />
-            </button>
-
-            <div className="flex flex-col items-center text-center mb-6">
-              <div className="w-12 h-12 bg-memorial-accent/10 rounded-full flex items-center justify-center mb-4">
-                <Lock className="text-memorial-accent" size={24} />
-              </div>
-              <h2 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text">Verify Role</h2>
-              <p className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary mt-2">
-                Enter the Family Key for <strong>{pendingRole}</strong> access.
-              </p>
-            </div>
-
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Enter Family Key"
-                value={rolePassword}
-                onChange={(e) => setRolePassword(e.target.value.toUpperCase())}
-                className="input-memorial w-full text-center text-lg font-mono tracking-widest uppercase"
-                autoFocus
-              />
-              <button type="submit" className="btn-primary w-full shadow-md">
-                Verify & Unlock
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </DashboardLayout>
   )
 }
