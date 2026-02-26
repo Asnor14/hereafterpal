@@ -1,107 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
 
-cloudinary.config({
-    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-function sleep(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function createFishModel(apiKey: string, file: File, voiceName: string) {
-    const createModelData = new FormData();
-    createModelData.append('type', 'tts');
-    createModelData.append('title', voiceName || 'Memorial Voice Clone');
-    createModelData.append('visibility', 'private');
-    createModelData.append('train_mode', 'fast');
-    createModelData.append('enhance_audio_quality', 'true');
-    createModelData.append('voices', file, file.name);
-
-    const response = await fetch('https://api.fish.audio/model', {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-        },
-        body: createModelData,
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to create Fish model: ${errorText}`);
-    }
-
-    const data = await response.json();
-    const modelId = String(data?._id || '');
-    if (!modelId) {
-        throw new Error('Fish model creation did not return a model ID');
-    }
-
-    return modelId;
-}
-
-async function synthesizeWithFish(apiKey: string, modelId: string, text: string) {
-    let lastError = 'Fish TTS failed';
-
-    for (let attempt = 0; attempt < 12; attempt++) {
-        const response = await fetch('https://api.fish.audio/v1/tts', {
-            method: 'POST',
+async function pollTaskStatus(taskId: string, apiKey: string, maxAttempts = 30, delayMs = 2000) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const response = await fetch(`https://api.ai33.pro/v1/task/${taskId}`, {
+            method: 'GET',
             headers: {
-                Authorization: `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
-                model: 's1',
+                'xi-api-key': apiKey,
             },
-            body: JSON.stringify({
-                text,
-                reference_id: modelId,
-                format: 'mp3',
-            }),
         });
 
-        if (response.ok) {
-            return Buffer.from(await response.arrayBuffer());
+        if (!response.ok) {
+            throw new Error('Failed to check task status');
         }
 
-        lastError = await response.text();
-        await sleep(2500);
+        const taskData = await response.json();
+
+        if (taskData.status === 'done') {
+            return taskData;
+        }
+
+        if (taskData.status === 'error' || taskData.error_message) {
+            throw new Error(taskData.error_message || 'Voice cloning failed');
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
 
-    throw new Error(`Failed to generate cloned voice audio: ${lastError}`);
-}
-
-async function uploadAudioToCloudinary(audioBuffer: Buffer) {
-    if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET || !process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
-        return null;
-    }
-
-    return new Promise<string>((resolve, reject) => {
-        const upload = cloudinary.uploader.upload_stream(
-            {
-                folder: 'memorial_voice',
-                resource_type: 'video',
-                format: 'mp3',
-            },
-            (error, result) => {
-                if (error || !result?.secure_url) {
-                    reject(error || new Error('Cloudinary upload failed'));
-                    return;
-                }
-                resolve(result.secure_url);
-            }
-        );
-
-        upload.end(audioBuffer);
-    });
+    throw new Error('Voice cloning timed out');
 }
 
 export async function POST(request: NextRequest) {
     try {
-        const apiKey = process.env.FISH_API_KEY;
+        const apiKey = process.env.AI33PRO_API_KEY;
         if (!apiKey) {
             return NextResponse.json(
-                { error: 'Fish API not configured' },
+                { error: 'Voice API not configured' },
                 { status: 500 }
             );
         }
@@ -110,6 +44,7 @@ export async function POST(request: NextRequest) {
         const file = formData.get('file') as File | null;
         const text = String(formData.get('text') || '').trim();
         const voiceName = String(formData.get('voiceName') || '').trim();
+        const targetLang = String(formData.get('targetLang') || 'en').trim();
 
         if (!file) {
             return NextResponse.json(
@@ -146,25 +81,55 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const modelId = await createFishModel(apiKey, file, voiceName);
-        const audioBuffer = await synthesizeWithFish(apiKey, modelId, text);
+        const dubbingPayload = new FormData();
+        dubbingPayload.append('file', file, file.name);
+        dubbingPayload.append('num_speakers', '0');
+        dubbingPayload.append('disable_voice_cloning', 'false');
+        dubbingPayload.append('source_lang', 'auto');
+        dubbingPayload.append('target_lang', targetLang);
 
-        let audioUrl: string | null = null;
-        try {
-            audioUrl = await uploadAudioToCloudinary(audioBuffer);
-        } catch (uploadError) {
-            console.error('Cloudinary upload failed, falling back to data URL:', uploadError);
+        const startResponse = await fetch('https://api.ai33.pro/v1/task/dubbing', {
+            method: 'POST',
+            headers: {
+                'xi-api-key': apiKey,
+            },
+            body: dubbingPayload,
+        });
+
+        if (!startResponse.ok) {
+            const errorData = await startResponse.text();
+            console.error('ai33 dubbing start error:', errorData);
+            return NextResponse.json(
+                { error: 'Failed to start voice cloning task. Please try again.' },
+                { status: 500 }
+            );
         }
 
+        const startResult = await startResponse.json();
+        if (!startResult.success || !startResult.task_id) {
+            return NextResponse.json(
+                { error: 'Failed to create voice cloning task' },
+                { status: 500 }
+            );
+        }
+
+        const taskResult = await pollTaskStatus(startResult.task_id, apiKey);
+        const audioUrl = taskResult?.metadata?.audio_url;
+
         if (!audioUrl) {
-            const base64Audio = audioBuffer.toString('base64');
-            audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
+            return NextResponse.json(
+                { error: 'No audio URL in response' },
+                { status: 500 }
+            );
         }
 
         return NextResponse.json({
             success: true,
             audioUrl,
-            clonedVoiceId: modelId,
+            taskId: startResult.task_id,
+            creditsRemaining: startResult.ec_remain_credits,
+            voiceName: voiceName || null,
+            text,
         });
     } catch (error) {
         console.error('Clone voice error:', error);

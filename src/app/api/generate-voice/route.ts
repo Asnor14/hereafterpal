@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Minimax Voice IDs based on gender and age
-// Using actual numeric IDs from ai33pro (corrected sequence)
+// ElevenLabs Voice IDs (via ai33.pro) based on gender and age.
+// Env overrides are supported if you want to tune specific voices.
 const VOICE_MAP: Record<string, Record<string, string>> = {
     female: {
-        child: '236835177529409',    // Using Female Young as fallback for child
-        young: '236835177529409',
-        middle: '226893671006276',   // Graceful Lady
-        senior: '209533299589209',
+        child: process.env.AI33PRO_VOICE_FEMALE_CHILD || 'EXAVITQu4vr4xnSDxMaL',
+        young: process.env.AI33PRO_VOICE_FEMALE_YOUNG || 'EXAVITQu4vr4xnSDxMaL',
+        middle: process.env.AI33PRO_VOICE_FEMALE_MIDDLE || '21m00Tcm4TlvDq8ikWAM',
+        senior: process.env.AI33PRO_VOICE_FEMALE_SENIOR || 'ThT5KcBeYPX3keUQqHPh',
     },
     male: {
-        child: '209533299589217',
-        young: '209533299589185',
-        middle: '226893671006275',
-        senior: '209533299589222',
+        child: process.env.AI33PRO_VOICE_MALE_CHILD || 'pNInz6obpgDQGcFmaJgB',
+        young: process.env.AI33PRO_VOICE_MALE_YOUNG || 'TxGEqnHWrfWFTfGW9XjX',
+        middle: process.env.AI33PRO_VOICE_MALE_MIDDLE || 'VR6AewLTigWG4xSOukaG',
+        senior: process.env.AI33PRO_VOICE_MALE_SENIOR || 'onwK4e9ZLuTAKqWW03F9',
     },
 };
 
-const DEFAULT_VOICE_ID = '226893671006276';
+const DEFAULT_VOICE_ID = process.env.AI33PRO_VOICE_DEFAULT || '21m00Tcm4TlvDq8ikWAM';
 
 // Determine age category
 function getAgeCategory(age: string | number): string {
@@ -94,32 +94,32 @@ export async function POST(request: NextRequest) {
         // Get voice ID based on gender and age
         const voiceId = getVoiceId(gender, age);
 
-        // Adjust voice settings based on mood
+        // Mood -> voice settings tuning for ElevenLabs model.
         let voiceSettings = {
-            voice_id: voiceId,
-            vol: 1,
-            pitch: 0,
-            speed: 1,
+            stability: 0.55,
+            similarity_boost: 0.75,
+            style: 0.20,
+            use_speaker_boost: true,
         };
 
-        // Modulate voice based on mood for emotional tone
+        // Modulate emotional tone by mood
         switch (mood) {
             case 'excited':
-                voiceSettings.pitch = 2;   // Higher pitch
-                voiceSettings.speed = 1.15; // Faster
+                voiceSettings.stability = 0.40;
+                voiceSettings.style = 0.55;
                 break;
             case 'stressed':
-                voiceSettings.pitch = 0;    // Normal pitch
-                voiceSettings.speed = 0.9;  // Slower
+                voiceSettings.stability = 0.70;
+                voiceSettings.style = 0.25;
                 break;
             case 'frustrated':
-                voiceSettings.pitch = -2;   // Lower pitch
-                voiceSettings.speed = 0.95; // Slightly slower
+                voiceSettings.stability = 0.65;
+                voiceSettings.style = 0.35;
                 break;
             case 'longing':
             default:
-                voiceSettings.pitch = -1;   // Slightly lower
-                voiceSettings.speed = 0.9;  // Slower, reflective
+                voiceSettings.stability = 0.50;
+                voiceSettings.style = 0.30;
                 break;
         }
 
@@ -134,9 +134,9 @@ export async function POST(request: NextRequest) {
 
         console.log(`Generating voice: gender=${gender}, age=${age}, mood=${mood}, voiceId=${voiceId}`);
 
-        // Step 1: Submit TTS request to Minimax via ai33pro
+        // Step 1: Submit TTS request to ElevenLabs via ai33pro
         const ttsResponse = await fetch(
-            'https://api.ai33.pro/v1m/task/text-to-speech',
+            `https://api.ai33.pro/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
             {
                 method: 'POST',
                 headers: {
@@ -145,16 +145,16 @@ export async function POST(request: NextRequest) {
                 },
                 body: JSON.stringify({
                     text: text.trim(),
-                    model: 'speech-2.6-hd',
-                    voice_setting: voiceSettings,
-                    language_boost: 'Auto',
+                    model_id: process.env.AI33PRO_MODEL_ID || 'eleven_multilingual_v2',
+                    voice_settings: voiceSettings,
+                    with_transcript: false,
                 }),
             }
         );
 
         if (!ttsResponse.ok) {
             const errorData = await ttsResponse.text();
-            console.error('Minimax TTS error:', errorData);
+            console.error('ai33 ElevenLabs TTS error:', errorData);
             return NextResponse.json(
                 { error: 'Failed to start voice generation. Please try again.' },
                 { status: 500 }
