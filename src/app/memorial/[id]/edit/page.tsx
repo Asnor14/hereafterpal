@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CldImage } from 'next-cloudinary'
 import toast from 'react-hot-toast'
-import { Trash, Lock, Upload, Image as ImageIcon, X, Plus } from 'lucide-react'
+import { Trash, Lock, Upload, Image as ImageIcon, X, Plus, Eye } from 'lucide-react'
 import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
 import { canAccess, getPhotoLimit, isPaidPlan } from '@/lib/planFeatures'
@@ -32,6 +32,7 @@ export default function EditMemorialPage() {
   const [visibility, setVisibility] = useState('private')
   const [gender, setGender] = useState('female')
   const [senderFolders, setSenderFolders] = useState<any[]>([])
+  const [activeFolderFilter, setActiveFolderFilter] = useState<string | null>(null)
   const [newFolderName, setNewFolderName] = useState('')
   const [newFolderPassword, setNewFolderPassword] = useState('')
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
@@ -324,6 +325,26 @@ export default function EditMemorialPage() {
     toast.success('Sender folder added.')
   }
 
+  const handleDeleteSenderFolder = async (folderId: string, folderName: string) => {
+    if (!confirm(`Delete folder "${folderName}"?`)) return
+
+    const { error } = await supabase
+      .from('letter_sender_folders')
+      .delete()
+      .eq('id', folderId)
+
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+
+    setSenderFolders(prev => prev.filter(folder => folder.id !== folderId))
+    if (activeFolderFilter === folderId) {
+      setActiveFolderFilter(null)
+    }
+    toast.success('Folder deleted.')
+  }
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -336,6 +357,9 @@ export default function EditMemorialPage() {
   }
 
   const isPaid = isPaidPlan(subscription?.plan)
+  const displayedLetters = activeFolderFilter
+    ? letters.filter(letter => letter.sender_folder_id === activeFolderFilter)
+    : letters
 
   return (
     <DashboardLayout>
@@ -603,25 +627,65 @@ export default function EditMemorialPage() {
                   </button>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-2">
                   {senderFolders.length === 0 && (
                     <span className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">
                       No folders yet.
                     </span>
                   )}
                   {senderFolders.map(folder => (
-                    <span
+                    <div
                       key={folder.id}
-                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-memorial-border dark:border-memorialDark-border text-sm text-memorial-text dark:text-memorialDark-text bg-memorial-surface dark:bg-memorialDark-surface"
+                      className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-center px-3 py-2 rounded-memorial border border-memorial-border dark:border-memorialDark-border text-sm text-memorial-text dark:text-memorialDark-text bg-memorial-surface dark:bg-memorialDark-surface"
                     >
-                      {folder.name}
-                      {folder.password_hash && <Lock size={12} className="opacity-70" />}
-                    </span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">{folder.name}</span>
+                        {folder.password_hash && <Lock size={12} className="opacity-70" />}
+                        <span className="text-xs opacity-70">
+                          {(letters || []).filter(letter => letter.sender_folder_id === folder.id).length} letter(s)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 md:justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setActiveFolderFilter(prev => prev === folder.id ? null : folder.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-memorial border border-memorial-border dark:border-memorialDark-border hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt transition-colors text-xs"
+                          title="View folder letters"
+                        >
+                          <Eye size={13} />
+                          {activeFolderFilter === folder.id ? 'Viewing' : 'View'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSenderFolder(folder.id, folder.name)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-memorial border border-red-500/40 text-red-400 hover:bg-red-600/10 transition-colors text-xs"
+                          title="Delete folder"
+                        >
+                          <Trash size={13} />
+                          Delete
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
 
-              {letters.length > 0 ? letters.map((letter) => {
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold uppercase tracking-widest text-memorial-textSecondary">
+                  Letters {activeFolderFilter ? '(Filtered)' : '(All)'}
+                </h4>
+                {activeFolderFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveFolderFilter(null)}
+                    className="text-xs px-3 py-1 rounded-memorial border border-memorial-border dark:border-memorialDark-border hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt transition-colors"
+                  >
+                    Clear Filter
+                  </button>
+                )}
+              </div>
+
+              {displayedLetters.length > 0 ? displayedLetters.map((letter) => {
                 return (
                   <div key={letter.id} className="flex justify-between items-center bg-memorial-bg dark:bg-memorialDark-bg p-4 rounded-memorial border border-memorial-border dark:border-memorialDark-border">
                     <div className="flex-1">
