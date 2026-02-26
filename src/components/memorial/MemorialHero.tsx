@@ -5,28 +5,80 @@ import { motion } from 'framer-motion';
 import { CldImage } from 'next-cloudinary';
 import { Play, Pause, Volume2 } from 'lucide-react';
 
+const MOOD_OPTIONS = [
+    { value: 'longing', label: 'Longing' },
+    { value: 'excited', label: 'Energetic' },
+    { value: 'stressed', label: 'Stressed' },
+    { value: 'frustrated', label: 'Frustrated' },
+];
+
+const DEFAULT_MOODS = {
+    longing: null,
+    excited: null,
+    stressed: null,
+    frustrated: null,
+};
+
+function buildVoiceProfiles(aiVoiceMoods: any) {
+    if (!aiVoiceMoods || typeof aiVoiceMoods !== 'object') return {};
+
+    // New format: { version: 2, profiles: { voice1: { label, moods: {...} } } }
+    if (aiVoiceMoods.profiles && typeof aiVoiceMoods.profiles === 'object') {
+        const parsed: Record<string, { label: string; moods: Record<string, string | null> }> = {};
+        Object.entries(aiVoiceMoods.profiles).forEach(([key, value]: [string, any]) => {
+            const sourceMoods = value?.moods && typeof value.moods === 'object' ? value.moods : value || {};
+            parsed[key] = {
+                label: value?.label || key,
+                moods: {
+                    ...DEFAULT_MOODS,
+                    longing: typeof sourceMoods.longing === 'string' ? sourceMoods.longing : null,
+                    excited: typeof sourceMoods.excited === 'string' ? sourceMoods.excited : null,
+                    stressed: typeof sourceMoods.stressed === 'string' ? sourceMoods.stressed : null,
+                    frustrated: typeof sourceMoods.frustrated === 'string' ? sourceMoods.frustrated : null,
+                },
+            };
+        });
+        return parsed;
+    }
+
+    // Legacy format: { longing, excited, stressed, frustrated }
+    const hasLegacyMood = ['longing', 'excited', 'stressed', 'frustrated'].some(
+        (mood) => typeof aiVoiceMoods[mood] === 'string' && aiVoiceMoods[mood]
+    );
+    if (hasLegacyMood) {
+        return {
+            voice1: {
+                label: 'Voice 1',
+                moods: {
+                    ...DEFAULT_MOODS,
+                    longing: typeof aiVoiceMoods.longing === 'string' ? aiVoiceMoods.longing : null,
+                    excited: typeof aiVoiceMoods.excited === 'string' ? aiVoiceMoods.excited : null,
+                    stressed: typeof aiVoiceMoods.stressed === 'string' ? aiVoiceMoods.stressed : null,
+                    frustrated: typeof aiVoiceMoods.frustrated === 'string' ? aiVoiceMoods.frustrated : null,
+                },
+            },
+        };
+    }
+
+    return {};
+}
+
 export default function MemorialHero({ memorial }) {
     const [isPlaying, setIsPlaying] = useState(false);
-    const audioRef = useRef(null);
+    const [selectedVoiceKey, setSelectedVoiceKey] = useState('');
+    const [selectedMood, setSelectedMood] = useState('longing');
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     if (!memorial) return null;
 
     const { name, date_of_birth, date_of_passing, image_url, quote, bio, ai_voice_moods } = memorial;
-
-    // Find the first non-null audio URL from ai_voice_moods
-    const getVoiceAudioUrl = () => {
-        if (!ai_voice_moods || typeof ai_voice_moods !== 'object') return null;
-
-        const moods = ['longing', 'excited', 'stressed', 'frustrated'];
-        for (const mood of moods) {
-            if (ai_voice_moods[mood]) {
-                return ai_voice_moods[mood];
-            }
-        }
-        return null;
-    };
-
-    const voiceAudioUrl = getVoiceAudioUrl();
+    const voiceProfiles = buildVoiceProfiles(ai_voice_moods);
+    const voiceKeys = Object.keys(voiceProfiles);
+    const selectedProfile = selectedVoiceKey ? voiceProfiles[selectedVoiceKey] : null;
+    const voiceAudioUrl = selectedProfile?.moods?.[selectedMood] || null;
+    const availableMoods = selectedProfile
+        ? MOOD_OPTIONS.filter((mood) => !!selectedProfile.moods?.[mood.value])
+        : [];
 
     // Format dates
     const birthYear = date_of_birth ? new Date(date_of_birth).getFullYear() : '';
@@ -34,6 +86,29 @@ export default function MemorialHero({ memorial }) {
 
     // Check if image_url is a Cloudinary public_id
     const isCloudinaryImage = image_url && !image_url.startsWith('http');
+
+    useEffect(() => {
+        if (voiceKeys.length === 0) {
+            setSelectedVoiceKey('');
+            return;
+        }
+
+        if (!selectedVoiceKey || !voiceProfiles[selectedVoiceKey]) {
+            setSelectedVoiceKey(voiceKeys[0]);
+        }
+    }, [selectedVoiceKey, voiceKeys, voiceProfiles]);
+
+    useEffect(() => {
+        if (!selectedProfile) {
+            setSelectedMood('longing');
+            return;
+        }
+
+        if (!selectedProfile.moods?.[selectedMood]) {
+            const firstAvailableMood = MOOD_OPTIONS.find((mood) => !!selectedProfile.moods?.[mood.value]);
+            setSelectedMood(firstAvailableMood?.value || 'longing');
+        }
+    }, [selectedMood, selectedProfile]);
 
     // Audio playback toggle
     const togglePlayback = () => {
@@ -56,6 +131,15 @@ export default function MemorialHero({ memorial }) {
             return () => audio.removeEventListener('ended', handleEnded);
         }
     }, [voiceAudioUrl]);
+
+    useEffect(() => {
+        // Stop previous playback whenever visitor switches voice or mood.
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+        }
+        setIsPlaying(false);
+    }, [selectedVoiceKey, selectedMood]);
 
     return (
         <section className="relative w-full">
@@ -133,34 +217,67 @@ export default function MemorialHero({ memorial }) {
                         </motion.blockquote>
 
                         {/* AI Voice Tribute Player */}
-                        {voiceAudioUrl && (
+                        {voiceKeys.length > 0 && (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.5, delay: 0.5 }}
                                 className="flex justify-center"
                             >
-                                <button
-                                    onClick={togglePlayback}
-                                    className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${isPlaying
-                                        ? 'bg-white/20 backdrop-blur-md border border-white/30'
-                                        : 'bg-memorial-accent/90 dark:bg-memorialDark-accent/90 hover:bg-memorial-accent dark:hover:bg-memorialDark-accent'
-                                        }`}
-                                >
-                                    {isPlaying ? (
-                                        <>
-                                            <Pause size={18} className="text-white" />
-                                            <span className="text-white font-medium text-sm">Pause Tribute</span>
-                                            <Volume2 size={16} className="text-white animate-pulse" />
-                                        </>
+                                <div className="w-full max-w-xl bg-black/25 backdrop-blur-md border border-white/20 rounded-2xl p-3 md:p-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                                        <select
+                                            value={selectedVoiceKey}
+                                            onChange={(e) => setSelectedVoiceKey(e.target.value)}
+                                            className="w-full rounded-lg border border-white/30 bg-black/20 text-white text-sm px-3 py-2 outline-none"
+                                        >
+                                            {voiceKeys.map((key) => (
+                                                <option key={key} value={key} className="text-black">
+                                                    {voiceProfiles[key].label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <select
+                                            value={selectedMood}
+                                            onChange={(e) => setSelectedMood(e.target.value)}
+                                            className="w-full rounded-lg border border-white/30 bg-black/20 text-white text-sm px-3 py-2 outline-none"
+                                        >
+                                            {MOOD_OPTIONS.map((mood) => (
+                                                <option key={mood.value} value={mood.value} disabled={!selectedProfile?.moods?.[mood.value]} className="text-black">
+                                                    {mood.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {voiceAudioUrl ? (
+                                        <button
+                                            onClick={togglePlayback}
+                                            className={`w-full flex items-center justify-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${isPlaying
+                                                ? 'bg-white/20 border border-white/30'
+                                                : 'bg-memorial-accent/90 dark:bg-memorialDark-accent/90 hover:bg-memorial-accent dark:hover:bg-memorialDark-accent'
+                                                }`}
+                                        >
+                                            {isPlaying ? (
+                                                <>
+                                                    <Pause size={18} className="text-white" />
+                                                    <span className="text-white font-medium text-sm">Pause Tribute</span>
+                                                    <Volume2 size={16} className="text-white animate-pulse" />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Play size={18} className="text-white ml-0.5" />
+                                                    <span className="text-white font-medium text-sm">Play Voice Tribute</span>
+                                                </>
+                                            )}
+                                        </button>
                                     ) : (
-                                        <>
-                                            <Play size={18} className="text-white ml-0.5" />
-                                            <span className="text-white font-medium text-sm">Play Voice Tribute</span>
-                                        </>
+                                        <div className="w-full text-center text-xs text-white/80 py-2">
+                                            No audio saved for this mood on the selected voice.
+                                        </div>
                                     )}
-                                </button>
-                                <audio ref={audioRef} src={voiceAudioUrl} className="hidden" />
+                                </div>
+                                <audio ref={audioRef} src={voiceAudioUrl || undefined} className="hidden" />
                             </motion.div>
                         )}
                     </motion.div>

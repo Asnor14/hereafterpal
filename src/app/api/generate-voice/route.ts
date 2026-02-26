@@ -74,7 +74,7 @@ async function pollTaskStatus(taskId: string, apiKey: string, maxAttempts = 30, 
 
 export async function POST(request: NextRequest) {
     try {
-        const { text, mood, gender, age } = await request.json();
+        const { text, mood, gender, age, voiceId } = await request.json();
 
         // Validation
         if (!text || typeof text !== 'string' || text.trim().length === 0) {
@@ -91,8 +91,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get voice ID based on gender and age
-        const voiceId = getVoiceId(gender, age);
+        // Respect explicit voice choice when provided so users can keep one
+        // consistent voice identity across multiple moods.
+        const resolvedVoiceId = typeof voiceId === 'string' && voiceId.trim()
+            ? voiceId.trim()
+            : getVoiceId(gender, age);
 
         // Mood -> voice settings tuning for ElevenLabs model.
         let voiceSettings = {
@@ -132,11 +135,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        console.log(`Generating voice: gender=${gender}, age=${age}, mood=${mood}, voiceId=${voiceId}`);
+        console.log(`Generating voice: gender=${gender}, age=${age}, mood=${mood}, voiceId=${resolvedVoiceId}`);
 
         // Step 1: Submit TTS request to ElevenLabs via ai33pro
         const ttsResponse = await fetch(
-            `https://api.ai33.pro/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
+            `https://api.ai33.pro/v1/text-to-speech/${resolvedVoiceId}?output_format=mp3_44100_128`,
             {
                 method: 'POST',
                 headers: {
@@ -191,7 +194,7 @@ export async function POST(request: NextRequest) {
             mood: mood,
             gender: gender,
             age: age,
-            voiceId: voiceId,
+            voiceId: resolvedVoiceId,
             creditsRemaining: ttsResult.ec_remain_credits,
         });
 

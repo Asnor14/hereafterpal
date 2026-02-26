@@ -1,11 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CldImage } from 'next-cloudinary'
 import toast from 'react-hot-toast'
-import { Trash, Lock, Upload, Image as ImageIcon, X, Plus, Eye } from 'lucide-react'
+import { Trash, Lock, Upload, Image as ImageIcon, X, Plus, Eye, Mic, Play, Pause, Loader2, Check } from 'lucide-react'
 import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
 import { canAccess, getPhotoLimit, isPaidPlan } from '@/lib/planFeatures'
@@ -17,6 +17,109 @@ interface PendingUpload {
   preview: string
   caption: string
   status: 'pending' | 'uploading' | 'success' | 'error'
+}
+
+const MOOD_OPTIONS = [
+  { value: 'longing', label: 'Longing' },
+  { value: 'excited', label: 'Energetic' },
+  { value: 'stressed', label: 'Stressed' },
+  { value: 'frustrated', label: 'Frustrated' },
+]
+
+const DEFAULT_MOODS = {
+  longing: null,
+  excited: null,
+  stressed: null,
+  frustrated: null,
+}
+
+const VOICE_PROFILE_OPTIONS = [
+  {
+    key: 'voice1',
+    label: 'Voice 1 - Celestine',
+    femaleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE1_FEMALE || 'EXAVITQu4vr4xnSDxMaL',
+    maleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE1_MALE || 'pNInz6obpgDQGcFmaJgB',
+  },
+  {
+    key: 'voice2',
+    label: 'Voice 2 - Matilda',
+    femaleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE2_FEMALE || 'XrExE9yKIg1WjnnlVkGX',
+    maleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE2_MALE || 'TxGEqnHWrfWFTfGW9XjX',
+  },
+  {
+    key: 'voice3',
+    label: 'Voice 3 - Lily',
+    femaleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE3_FEMALE || 'pFZP5JQG7iQjIQuC4Bku',
+    maleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE3_MALE || 'VR6AewLTigWG4xSOukaG',
+  },
+  {
+    key: 'voice4',
+    label: 'Voice 4 - Dorothy',
+    femaleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE4_FEMALE || 'ThT5KcBeYPX3keUQqHPh',
+    maleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE4_MALE || 'onwK4e9ZLuTAKqWW03F9',
+  },
+]
+
+const cloneMoodTemplate = () => ({ ...DEFAULT_MOODS })
+
+function normalizeVoicePayload(raw: any) {
+  // New shape: { version: 2, selectedProfileKey, profiles: { voice1: { label, moods } } }
+  if (raw?.profiles && typeof raw.profiles === 'object') {
+    const profiles: Record<string, any> = {}
+    for (const [key, value] of Object.entries(raw.profiles)) {
+      const source = (value as any)?.moods && typeof (value as any).moods === 'object'
+        ? (value as any).moods
+        : value
+      profiles[key] = {
+        label: (value as any)?.label || key,
+        voiceIdByGender: (value as any)?.voiceIdByGender || null,
+        moods: {
+          ...cloneMoodTemplate(),
+          longing: typeof (source as any).longing === 'string' ? (source as any).longing : null,
+          excited: typeof (source as any).excited === 'string' ? (source as any).excited : null,
+          stressed: typeof (source as any).stressed === 'string' ? (source as any).stressed : null,
+          frustrated: typeof (source as any).frustrated === 'string' ? (source as any).frustrated : null,
+        },
+      }
+    }
+
+    return {
+      version: 2,
+      selectedProfileKey: raw.selectedProfileKey || Object.keys(profiles)[0] || 'voice1',
+      profiles,
+    }
+  }
+
+  // Legacy shape: flat moods object
+  const hasLegacyMood = ['longing', 'excited', 'stressed', 'frustrated'].some(
+    mood => typeof raw?.[mood] === 'string' && raw?.[mood]
+  )
+
+  if (hasLegacyMood) {
+    return {
+      version: 2,
+      selectedProfileKey: 'voice1',
+      profiles: {
+        voice1: {
+          label: 'Voice 1 - Celestine',
+          voiceIdByGender: null,
+          moods: {
+            ...cloneMoodTemplate(),
+            longing: typeof raw.longing === 'string' ? raw.longing : null,
+            excited: typeof raw.excited === 'string' ? raw.excited : null,
+            stressed: typeof raw.stressed === 'string' ? raw.stressed : null,
+            frustrated: typeof raw.frustrated === 'string' ? raw.frustrated : null,
+          },
+        },
+      },
+    }
+  }
+
+  return {
+    version: 2,
+    selectedProfileKey: 'voice1',
+    profiles: {},
+  }
 }
 
 export default function EditMemorialPage() {
@@ -38,11 +141,48 @@ export default function EditMemorialPage() {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([])
   const [isUploadingBulk, setIsUploadingBulk] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  // Voice editing state
+  const [voiceType, setVoiceType] = useState('ai-voice')
+  const [voiceMessage, setVoiceMessage] = useState('')
+  const [voiceMood, setVoiceMood] = useState('longing')
+  const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string | null>(null)
+  const [isGeneratingVoice, setIsGeneratingVoice] = useState(false)
+  const [voiceProgress, setVoiceProgress] = useState(0)
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+  const [cloneVoiceAudio, setCloneVoiceAudio] = useState<File | null>(null)
+  const [cloneVoiceName, setCloneVoiceName] = useState('')
+  const [cloneVoiceText, setCloneVoiceText] = useState('')
+  const [selectedVoiceProfileKey, setSelectedVoiceProfileKey] = useState('voice1')
+  const [voiceProfilesPayload, setVoiceProfilesPayload] = useState<any>({
+    version: 2,
+    selectedProfileKey: 'voice1',
+    profiles: {},
+  })
 
   const supabase = createClient()
   const params = useParams()
   const router = useRouter()
   const { id: memorialId } = params
+
+  const getProfileVoiceId = (profileKey: string, targetGender: string) => {
+    const option = VOICE_PROFILE_OPTIONS.find(p => p.key === profileKey)
+    if (!option) return null
+    return targetGender === 'male' ? option.maleVoiceId : option.femaleVoiceId
+  }
+
+  const calculateAge = (dob: string | null, dop: string | null) => {
+    if (!dob || !dop) return 50
+    const birth = new Date(dob)
+    const passing = new Date(dop)
+    if (Number.isNaN(birth.getTime()) || Number.isNaN(passing.getTime())) return 50
+
+    let age = passing.getFullYear() - birth.getFullYear()
+    const m = passing.getMonth() - birth.getMonth()
+    if (m < 0 || (m === 0 && passing.getDate() < birth.getDate())) age--
+    return age > 0 ? age : 50
+  }
 
   // --- 1. Fetch all data for editing ---
   const fetchAll = async () => {
@@ -72,6 +212,11 @@ export default function EditMemorialPage() {
     setFamilyPassword(memorialData.family_password || '')
     setVisibility(memorialData.visibility || 'private')
     setGender(memorialData.gender || 'female')
+    setVoiceMessage(memorialData.voice_message || '')
+
+    const normalizedVoice = normalizeVoicePayload(memorialData.ai_voice_moods)
+    setVoiceProfilesPayload(normalizedVoice)
+    setSelectedVoiceProfileKey(normalizedVoice.selectedProfileKey || 'voice1')
 
     // Fetch subscription
     const { data: subData } = await supabase
@@ -106,9 +251,198 @@ export default function EditMemorialPage() {
     if (memorialId) fetchAll()
   }, [memorialId, supabase, router])
 
+  const selectedVoiceProfile = voiceProfilesPayload?.profiles?.[selectedVoiceProfileKey]
+
+  useEffect(() => {
+    const profileKeys = Object.keys(voiceProfilesPayload?.profiles || {})
+    if (!selectedVoiceProfileKey || !voiceProfilesPayload?.profiles?.[selectedVoiceProfileKey]) {
+      if (profileKeys.length > 0) {
+        setSelectedVoiceProfileKey(profileKeys[0])
+      }
+    }
+  }, [selectedVoiceProfileKey, voiceProfilesPayload])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    const handleEnded = () => setIsPlayingAudio(false)
+    audio.addEventListener('ended', handleEnded)
+    return () => audio.removeEventListener('ended', handleEnded)
+  }, [generatedAudioUrl])
+
+  useEffect(() => {
+    const currentMoodUrl = selectedVoiceProfile?.moods?.[voiceMood] || null
+    setGeneratedAudioUrl(currentMoodUrl)
+    setIsPlayingAudio(false)
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+  }, [selectedVoiceProfile, voiceMood, selectedVoiceProfileKey])
+
+  const toggleAudioPlayback = () => {
+    if (!audioRef.current) return
+    if (isPlayingAudio) {
+      audioRef.current.pause()
+    } else {
+      audioRef.current.play()
+    }
+    setIsPlayingAudio(!isPlayingAudio)
+  }
+
+  const ensureVoiceProfile = (profileKey: string) => {
+    const existing = voiceProfilesPayload?.profiles?.[profileKey]
+    if (existing) return existing
+    const option = VOICE_PROFILE_OPTIONS.find(p => p.key === profileKey)
+    return {
+      label: option?.label || profileKey,
+      voiceIdByGender: {
+        female: option?.femaleVoiceId || null,
+        male: option?.maleVoiceId || null,
+      },
+      moods: cloneMoodTemplate(),
+    }
+  }
+
+  const upsertCurrentGeneratedAudio = (audioUrl: string) => {
+    setVoiceProfilesPayload((prev: any) => {
+      const current = prev || { version: 2, selectedProfileKey: selectedVoiceProfileKey, profiles: {} }
+      const option = VOICE_PROFILE_OPTIONS.find(p => p.key === selectedVoiceProfileKey)
+      const profile = current?.profiles?.[selectedVoiceProfileKey] || {
+        label: option?.label || selectedVoiceProfileKey,
+        voiceIdByGender: {
+          female: option?.femaleVoiceId || null,
+          male: option?.maleVoiceId || null,
+        },
+        moods: cloneMoodTemplate(),
+      }
+      return {
+        ...current,
+        version: 2,
+        selectedProfileKey: selectedVoiceProfileKey,
+        profiles: {
+          ...(current.profiles || {}),
+          [selectedVoiceProfileKey]: {
+            ...profile,
+            moods: {
+              ...cloneMoodTemplate(),
+              ...(profile.moods || {}),
+              [voiceMood]: audioUrl,
+            },
+          },
+        },
+      }
+    })
+  }
+
+  const handleGenerateVoice = async () => {
+    if (!voiceMessage.trim()) {
+      toast.error('Please enter a message for the AI voice.')
+      return
+    }
+    if (!isPaidPlan(subscription?.plan)) {
+      toast.error('AI voice is a paid feature.')
+      return
+    }
+
+    setIsGeneratingVoice(true)
+    setVoiceProgress(0)
+    const progressInterval = setInterval(() => {
+      setVoiceProgress(prev => (prev >= 90 ? 90 : prev + 5))
+    }, 500)
+
+    try {
+      const age = calculateAge(memorial?.date_of_birth || null, memorial?.date_of_passing || null)
+      const fixedVoiceId = getProfileVoiceId(selectedVoiceProfileKey, gender || memorial?.gender || 'female')
+      const response = await fetch('/api/generate-voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: voiceMessage.trim(),
+          mood: voiceMood,
+          gender: gender || memorial?.gender || 'female',
+          age,
+          voiceId: fixedVoiceId,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to generate voice')
+
+      setGeneratedAudioUrl(data.audioUrl)
+      upsertCurrentGeneratedAudio(data.audioUrl)
+      setVoiceProgress(100)
+      toast.success('AI voice generated.')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate voice.')
+      setVoiceProgress(0)
+    } finally {
+      clearInterval(progressInterval)
+      setTimeout(() => {
+        setIsGeneratingVoice(false)
+        setVoiceProgress(0)
+      }, 800)
+    }
+  }
+
+  const handleGenerateCloneVoice = async () => {
+    if (!cloneVoiceAudio) {
+      toast.error('Please upload a voice sample.')
+      return
+    }
+    if (!cloneVoiceText.trim()) {
+      toast.error('Please enter a message for cloned voice.')
+      return
+    }
+    if (!isPaidPlan(subscription?.plan)) {
+      toast.error('Cloned voice is a paid feature.')
+      return
+    }
+
+    setIsGeneratingVoice(true)
+    setVoiceProgress(0)
+    const progressInterval = setInterval(() => {
+      setVoiceProgress(prev => (prev >= 90 ? 90 : prev + 5))
+    }, 500)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', cloneVoiceAudio)
+      formData.append('text', cloneVoiceText.trim())
+      formData.append('voiceName', cloneVoiceName.trim() || `${memorial?.name || 'Memorial'} Voice`)
+
+      const response = await fetch('/api/clone-voice', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to clone voice')
+
+      setGeneratedAudioUrl(data.audioUrl)
+      upsertCurrentGeneratedAudio(data.audioUrl)
+      setVoiceProgress(100)
+      setVoiceMessage(cloneVoiceText.trim())
+      toast.success('Cloned voice generated.')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to clone voice.')
+      setVoiceProgress(0)
+    } finally {
+      clearInterval(progressInterval)
+      setTimeout(() => {
+        setIsGeneratingVoice(false)
+        setVoiceProgress(0)
+      }, 800)
+    }
+  }
+
   // --- 2. Handle Bio/Visibility Update ---
   const handleUpdateBio = async (e) => {
     e.preventDefault()
+
+    if (isGeneratingVoice) {
+      toast.error('Please wait for voice generation to finish.')
+      return
+    }
 
     // Check for publishing
     if (visibility === 'public' && !isPaidPlan(subscription?.plan)) {
@@ -117,6 +451,16 @@ export default function EditMemorialPage() {
       return
     }
 
+    const normalized = {
+      ...(voiceProfilesPayload || {}),
+      version: 2,
+      selectedProfileKey: selectedVoiceProfileKey,
+      profiles: voiceProfilesPayload?.profiles || {},
+    }
+    const hasAnyVoiceAudio = Object.values(normalized.profiles || {}).some((profile: any) =>
+      Object.values(profile?.moods || {}).some((url: any) => typeof url === 'string' && !!url)
+    )
+
     const toastId = toast.loading('Saving changes...')
     const { error } = await supabase
       .from('memorials')
@@ -124,7 +468,10 @@ export default function EditMemorialPage() {
         bio: bio,
         visibility: visibility,
         gender: gender,
-        family_password: familyPassword.toUpperCase()
+        family_password: familyPassword.toUpperCase(),
+        voice_message: voiceType === 'clone-voice' ? cloneVoiceText.trim() || voiceMessage || null : voiceMessage || null,
+        voice_generation_status: hasAnyVoiceAudio ? 'generated' : 'pending',
+        ai_voice_moods: normalized,
       })
       .eq('id', memorialId)
 
@@ -357,6 +704,7 @@ export default function EditMemorialPage() {
   }
 
   const isPaid = isPaidPlan(subscription?.plan)
+  const existingProfileKeys = Object.keys(voiceProfilesPayload?.profiles || {})
   const displayedLetters = activeFolderFilter
     ? letters.filter(letter => letter.sender_folder_id === activeFolderFilter)
     : letters
@@ -449,6 +797,202 @@ export default function EditMemorialPage() {
                   </p>
                 </div>
               </div>
+
+              <div className="pt-4 border-t border-memorial-divider dark:border-memorialDark-divider space-y-4">
+                <div className="flex items-center gap-2">
+                  <Mic size={18} className="text-memorial-accent dark:text-memorialDark-accent" />
+                  <h4 className="text-base font-semibold text-memorial-text dark:text-memorialDark-text">Voice Tribute</h4>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-memorial-accent/10 text-memorial-accent">Optional</span>
+                  {!isPaid && <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">Paid Feature</span>}
+                </div>
+
+                {!isPaid && (
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 rounded-memorial text-sm text-yellow-700 dark:text-yellow-500">
+                    Upgrade plan to generate AI or cloned voice tributes in edit mode.
+                  </div>
+                )}
+
+                <div className={`space-y-4 ${!isPaid ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">
+                        Voice Profile
+                      </label>
+                      <select
+                        value={selectedVoiceProfileKey}
+                        onChange={(e) => {
+                          const nextKey = e.target.value
+                          setSelectedVoiceProfileKey(nextKey)
+                          setVoiceProfilesPayload((prev: any) => {
+                            const next = prev || { version: 2, selectedProfileKey: nextKey, profiles: {} }
+                            return {
+                              ...next,
+                              selectedProfileKey: nextKey,
+                              profiles: {
+                                ...(next.profiles || {}),
+                                [nextKey]: ensureVoiceProfile(nextKey),
+                              },
+                            }
+                          })
+                        }}
+                        className="select-memorial w-full"
+                      >
+                        {VOICE_PROFILE_OPTIONS.map((profile) => (
+                          <option key={profile.key} value={profile.key}>{profile.label}</option>
+                        ))}
+                        {existingProfileKeys
+                          .filter((key) => !VOICE_PROFILE_OPTIONS.some((option) => option.key === key))
+                          .map((key) => (
+                            <option key={key} value={key}>{voiceProfilesPayload?.profiles?.[key]?.label || key}</option>
+                          ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">
+                        Mood
+                      </label>
+                      <select
+                        value={voiceMood}
+                        onChange={(e) => setVoiceMood(e.target.value)}
+                        className="select-memorial w-full"
+                      >
+                        {MOOD_OPTIONS.map((mood) => (
+                          <option key={mood.value} value={mood.value}>{mood.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">
+                      Voice Type
+                    </label>
+                    <select
+                      value={voiceType}
+                      onChange={(e) => {
+                        setVoiceType(e.target.value)
+                        setGeneratedAudioUrl(null)
+                        setCloneVoiceAudio(null)
+                        setIsPlayingAudio(false)
+                      }}
+                      className="select-memorial w-full"
+                    >
+                      <option value="ai-voice">AI Voice</option>
+                      <option value="clone-voice">Cloned Voice</option>
+                    </select>
+                  </div>
+
+                  {voiceType === 'ai-voice' && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">
+                          Script
+                        </label>
+                        <textarea
+                          value={voiceMessage}
+                          onChange={(e) => {
+                            if (e.target.value.length <= 5000) setVoiceMessage(e.target.value)
+                          }}
+                          rows={4}
+                          className="input-memorial w-full"
+                          placeholder="Write the script for this voice..."
+                        />
+                        <p className="text-xs text-memorial-textSecondary mt-1">{voiceMessage.length} / 5000</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleGenerateVoice}
+                        disabled={isGeneratingVoice || !voiceMessage.trim()}
+                        className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60"
+                      >
+                        {isGeneratingVoice ? <Loader2 size={16} className="animate-spin" /> : <Mic size={16} />}
+                        {isGeneratingVoice ? 'Generating...' : 'Generate AI Voice for Selected Mood'}
+                      </button>
+                    </div>
+                  )}
+
+                  {voiceType === 'clone-voice' && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">Voice Sample</label>
+                        <input
+                          type="file"
+                          accept="audio/*"
+                          onChange={(e) => setCloneVoiceAudio(e.target.files?.[0] || null)}
+                          className="input-memorial w-full"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">Voice Name (Optional)</label>
+                        <input
+                          type="text"
+                          value={cloneVoiceName}
+                          onChange={(e) => setCloneVoiceName(e.target.value)}
+                          className="input-memorial w-full"
+                          maxLength={60}
+                          placeholder="e.g. Mom Memorial Voice"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">Message to Speak</label>
+                        <textarea
+                          value={cloneVoiceText}
+                          onChange={(e) => {
+                            if (e.target.value.length <= 5000) setCloneVoiceText(e.target.value)
+                          }}
+                          rows={4}
+                          className="input-memorial w-full"
+                          placeholder="Write what the cloned voice should speak..."
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleGenerateCloneVoice}
+                        disabled={isGeneratingVoice || !cloneVoiceAudio || !cloneVoiceText.trim()}
+                        className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60"
+                      >
+                        {isGeneratingVoice ? <Loader2 size={16} className="animate-spin" /> : <Mic size={16} />}
+                        {isGeneratingVoice ? 'Generating...' : 'Generate Cloned Voice for Selected Mood'}
+                      </button>
+                    </div>
+                  )}
+
+                  {isGeneratingVoice && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-memorial-textSecondary">
+                        <span>Generating voice...</span>
+                        <span>{voiceProgress}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt rounded-full overflow-hidden">
+                        <div className="h-full bg-memorial-accent transition-all duration-300" style={{ width: `${voiceProgress}%` }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {generatedAudioUrl && (
+                    <div className="p-3 rounded-memorial border border-memorial-border dark:border-memorialDark-border bg-memorial-bg dark:bg-memorialDark-bg">
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={toggleAudioPlayback}
+                          className="w-10 h-10 rounded-full bg-memorial-accent text-white flex items-center justify-center"
+                        >
+                          {isPlayingAudio ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+                        </button>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-memorial-text dark:text-memorialDark-text">Voice Preview</p>
+                          <p className="text-xs text-memorial-textSecondary">
+                            {VOICE_PROFILE_OPTIONS.find(p => p.key === selectedVoiceProfileKey)?.label || selectedVoiceProfileKey} - {MOOD_OPTIONS.find(m => m.value === voiceMood)?.label || voiceMood}
+                          </p>
+                        </div>
+                        <Check size={18} className="text-green-500" />
+                      </div>
+                      <audio ref={audioRef} src={generatedAudioUrl} className="hidden" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <button
                 type="submit"
                 className="btn-primary w-full"
