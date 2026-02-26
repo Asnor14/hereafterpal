@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CldImage } from 'next-cloudinary'
 import toast from 'react-hot-toast'
-import { Trash, Check, Lock, Upload, Image as ImageIcon, X, Plus } from 'lucide-react'
+import { Trash, Lock, Upload, Image as ImageIcon, X, Plus } from 'lucide-react'
 import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
 import { canAccess, getPhotoLimit, isPaidPlan } from '@/lib/planFeatures'
@@ -31,10 +31,10 @@ export default function EditMemorialPage() {
   const [tab, setTab] = useState('bio')
   const [visibility, setVisibility] = useState('private')
   const [gender, setGender] = useState('female')
-  const [verifiedRoles, setVerifiedRoles] = useState<string[]>([])
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
-  const [rolePassword, setRolePassword] = useState('')
-  const [pendingRole, setPendingRole] = useState<string | null>(null)
+  const [senderFolders, setSenderFolders] = useState<any[]>([])
+  const [newFolderName, setNewFolderName] = useState('')
+  const [newFolderPassword, setNewFolderPassword] = useState('')
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([])
   const [isUploadingBulk, setIsUploadingBulk] = useState(false)
 
@@ -72,11 +72,6 @@ export default function EditMemorialPage() {
     setVisibility(memorialData.visibility || 'private')
     setGender(memorialData.gender || 'female')
 
-    // Auto-verify creator's own role
-    if (memorialData.creator_relationship) {
-      setVerifiedRoles([memorialData.creator_relationship])
-    }
-
     // Fetch subscription
     const { data: subData } = await supabase
       .from('subscriptions')
@@ -93,6 +88,15 @@ export default function EditMemorialPage() {
     // Fetch guestbook letters
     const { data: lettersData } = await supabase.from('guestbook_entries').select('*').eq('memorial_id', memorialId).order('created_at');
     setLetters(lettersData || [])
+
+    // Fetch sender folders
+    const { data: foldersData } = await supabase
+      .from('letter_sender_folders')
+      .select('*')
+      .eq('memorial_id', memorialId)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true })
+    setSenderFolders(foldersData || [])
 
     setLoading(false)
   }
@@ -259,23 +263,9 @@ export default function EditMemorialPage() {
   }
 
   // --- 5. Handle Guestbook Deletion (Moderation) ---
-  const handleVerifyRole = (role: string) => {
-    if (role === 'Stranger' || !role) return true;
-    if (verifiedRoles.includes(role)) return true;
-
-    setPendingRole(role);
-    setIsPasswordModalOpen(true);
-    return false;
-  };
-
-  const handleDeleteLetter = async (letterId: string, role: string) => {
+  const handleDeleteLetter = async (letterId: string) => {
     if (!canAccess(subscription?.plan, 'letters_of_love')) {
       toast.error('Moderating letters requires a paid plan.');
-      return;
-    }
-
-    if (!handleVerifyRole(role)) {
-      toast.error(`Please verify your role to moderate ${role} letters.`);
       return;
     }
 
@@ -290,26 +280,49 @@ export default function EditMemorialPage() {
     }
   }
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const isPrimaryOwner = memorial?.creator_relationship === pendingRole;
-    // For primary owners, we don't need a password check here since they are already checked at login/fetch
-    // BUT the user wants the creator NOT to view the other's letters.
-    // So if pendingRole is the OTHER role, we check against memorial.family_password
-
-    const otherRole = memorial?.creator_relationship === 'Mom' ? 'Dad' : 'Mom';
-    const requiredPassword = pendingRole === otherRole ? memorial?.family_password : null;
-
-    if (pendingRole && (isPrimaryOwner || rolePassword === requiredPassword)) {
-      setVerifiedRoles(prev => [...prev, pendingRole]);
-      setIsPasswordModalOpen(false);
-      setRolePassword('');
-      setPendingRole(null);
-      toast.success(`Verified for ${pendingRole} moderation!`);
-    } else {
-      toast.error('Incorrect password or unauthorized role.');
+  const handleCreateSenderFolder = async () => {
+    const name = newFolderName.trim()
+    if (!name) {
+      toast.error('Folder name is required.')
+      return
     }
-  };
+
+    if (senderFolders.some(f => (f.name || '').toLowerCase() === name.toLowerCase())) {
+      toast.error('Folder name already exists.')
+      return
+    }
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      toast.error('You must be logged in.')
+      return
+    }
+
+    setIsCreatingFolder(true)
+    const { data, error } = await supabase
+      .from('letter_sender_folders')
+      .insert({
+        memorial_id: memorialId,
+        name,
+        password_hash: newFolderPassword.trim() || null,
+        created_by: user.id,
+        sort_order: senderFolders.length,
+      })
+      .select()
+      .single()
+
+    setIsCreatingFolder(false)
+
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+
+    setSenderFolders(prev => [...prev, data])
+    setNewFolderName('')
+    setNewFolderPassword('')
+    toast.success('Sender folder added.')
+  }
 
   if (loading) {
     return (

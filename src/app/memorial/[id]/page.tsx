@@ -18,6 +18,7 @@ export default function MemorialProfilePage() {
 
   const [memorial, setMemorial] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [senderFolders, setSenderFolders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -87,6 +88,30 @@ export default function MemorialProfilePage() {
     fetchMessages();
   }, [memorialId, supabase]);
 
+  // Fetch sender folders
+  useEffect(() => {
+    if (!memorialId) return;
+
+    const fetchSenderFolders = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('letter_sender_folders')
+          .select('*')
+          .eq('memorial_id', memorialId)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        setSenderFolders(data || []);
+      } catch (error) {
+        console.error('Error fetching sender folders:', error);
+      }
+    };
+
+    fetchSenderFolders();
+  }, [memorialId, supabase]);
+
   // Fetch gallery photos
   const [galleryPhotos, setGalleryPhotos] = useState([]);
   useEffect(() => {
@@ -120,7 +145,9 @@ export default function MemorialProfilePage() {
             memorial_id: memorialId,
             author_name: formData.name,
             message: formData.message,
-            role: formData.role || 'Stranger',
+            role: formData.role || formData.senderName || 'Guest',
+            sender_folder_id: formData.senderFolderId || null,
+            sender_name: formData.senderName || formData.role || 'Guest',
           },
         ]);
 
@@ -284,6 +311,7 @@ export default function MemorialProfilePage() {
           <div className="max-w-4xl mx-auto">
             <Guestbook
               messages={messages}
+              senderFolders={senderFolders}
               onSubmit={handleGuestbookSubmit}
               isLoading={false}
               isLoggedIn={isLoggedIn}
