@@ -170,6 +170,7 @@ export default function EditMemorialPage() {
   const [cloneVoiceAudio, setCloneVoiceAudio] = useState<File | null>(null)
   const [cloneVoiceName, setCloneVoiceName] = useState('')
   const [cloneVoiceText, setCloneVoiceText] = useState('')
+  const [cloneVoiceLanguage, setCloneVoiceLanguage] = useState('en')
   const [selectedVoiceProfileKey, setSelectedVoiceProfileKey] = useState('voice1')
   const [voiceProfilesPayload, setVoiceProfilesPayload] = useState<any>({
     version: 2,
@@ -427,6 +428,7 @@ export default function EditMemorialPage() {
       formData.append('text', cloneVoiceText.trim())
       formData.append('voiceName', cloneVoiceName.trim() || `${memorial?.name || 'Memorial'} Voice`)
       formData.append('gender', gender || memorial?.gender || 'female')
+      formData.append('targetLang', cloneVoiceLanguage)
 
       const response = await fetch('/api/clone-voice', {
         method: 'POST',
@@ -964,6 +966,17 @@ export default function EditMemorialPage() {
                           maxLength={60}
                           placeholder="e.g. Mom Memorial Voice"
                         />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">Language</label>
+                        <select
+                          value={cloneVoiceLanguage}
+                          onChange={(e) => setCloneVoiceLanguage(e.target.value)}
+                          className="select-memorial w-full"
+                        >
+                          <option value="en">English</option>
+                          <option value="tagalog">Tagalog</option>
+                        </select>
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">Message to Speak</label>

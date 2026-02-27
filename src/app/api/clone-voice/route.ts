@@ -6,7 +6,8 @@ function normalizeLanguage(raw: string) {
     const value = raw.trim().toLowerCase();
     if (!value) return 'en';
     if (value === 'english') return 'en';
-    if (value === 'tagalog') return 'tl';
+    // Product rule: when user chooses Tagalog, send Malay in the background.
+    if (value === 'tagalog' || value === 'tl' || value === 'malay') return 'ms';
     return value;
 }
 
