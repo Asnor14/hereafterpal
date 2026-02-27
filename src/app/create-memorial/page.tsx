@@ -13,10 +13,10 @@ import { isPaidPlan, getMemorialLimit } from '@/lib/planFeatures'
 
 // Mood options for AI Voice
 const MOOD_OPTIONS = [
-  { value: 'longing', label: 'Longing - Celestine' },
-  { value: 'excited', label: 'Excited - Celestine' },
-  { value: 'stressed', label: 'Stressed - Celestine' },
-  { value: 'frustrated', label: 'Frustrated - Celestine' },
+  { value: 'longing', label: 'Longing' },
+  { value: 'excited', label: 'Excited' },
+  { value: 'stressed', label: 'Stressed' },
+  { value: 'frustrated', label: 'Frustrated' },
 ]
 
 export default function CreateMemorialPage() {

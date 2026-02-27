@@ -30,6 +30,14 @@ async function pollTaskStatus(taskId: string, apiKey: string, maxAttempts = 30, 
     throw new Error('Voice cloning timed out');
 }
 
+function mapLanguageTag(raw: string) {
+    const value = raw.trim().toLowerCase();
+    if (!value) return 'English';
+    if (value === 'en' || value === 'english') return 'English';
+    if (value === 'fil' || value === 'tl' || value === 'tagalog') return 'Tagalog';
+    return raw;
+}
+
 export async function POST(request: NextRequest) {
     try {
         const apiKey = process.env.AI33PRO_API_KEY;
@@ -44,7 +52,8 @@ export async function POST(request: NextRequest) {
         const file = formData.get('file') as File | null;
         const text = String(formData.get('text') || '').trim();
         const voiceName = String(formData.get('voiceName') || '').trim();
-        const targetLang = String(formData.get('targetLang') || 'en').trim();
+        const targetLang = String(formData.get('targetLang') || 'English').trim();
+        const gender = String(formData.get('gender') || '').trim().toLowerCase();
 
         if (!file) {
             return NextResponse.json(
@@ -81,39 +90,80 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const dubbingPayload = new FormData();
-        dubbingPayload.append('file', file, file.name);
-        dubbingPayload.append('num_speakers', '0');
-        dubbingPayload.append('disable_voice_cloning', 'false');
-        dubbingPayload.append('source_lang', 'auto');
-        dubbingPayload.append('target_lang', targetLang);
+        const clonePayload = new FormData();
+        clonePayload.append('file', file, file.name);
+        if (voiceName) clonePayload.append('voice_name', voiceName);
+        clonePayload.append('preview_text', text.slice(0, 200));
+        clonePayload.append('language_tag', mapLanguageTag(targetLang));
+        clonePayload.append('need_noise_reduction', 'true');
+        if (gender === 'male' || gender === 'female') {
+            clonePayload.append('gender_tag', gender);
+        }
 
-        const startResponse = await fetch('https://api.ai33.pro/v1/task/dubbing', {
+        const cloneResponse = await fetch('https://api.ai33.pro/v1m/voice/clone', {
             method: 'POST',
             headers: {
                 'xi-api-key': apiKey,
             },
-            body: dubbingPayload,
+            body: clonePayload,
         });
 
-        if (!startResponse.ok) {
-            const errorData = await startResponse.text();
-            console.error('ai33 dubbing start error:', errorData);
+        if (!cloneResponse.ok) {
+            const errorData = await cloneResponse.text();
+            console.error('ai33 minimax clone error:', errorData);
             return NextResponse.json(
-                { error: 'Failed to start voice cloning task. Please try again.' },
+                { error: 'Failed to clone voice sample. Please try again.' },
                 { status: 500 }
             );
         }
 
-        const startResult = await startResponse.json();
-        if (!startResult.success || !startResult.task_id) {
+        const cloneResult = await cloneResponse.json();
+        const clonedVoiceId = cloneResult?.cloned_voice_id;
+        if (!cloneResult.success || !clonedVoiceId) {
             return NextResponse.json(
-                { error: 'Failed to create voice cloning task' },
+                { error: 'Failed to create cloned voice' },
                 { status: 500 }
             );
         }
 
-        const taskResult = await pollTaskStatus(startResult.task_id, apiKey);
+        const ttsResponse = await fetch('https://api.ai33.pro/v1m/task/text-to-speech', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'xi-api-key': apiKey,
+            },
+            body: JSON.stringify({
+                text,
+                model: process.env.AI33PRO_MINIMAX_MODEL || 'speech-2.6-hd',
+                voice_setting: {
+                    voice_id: String(clonedVoiceId),
+                    vol: 1,
+                    pitch: 0,
+                    speed: 1,
+                },
+                language_boost: 'Auto',
+                with_transcript: false,
+            }),
+        });
+
+        if (!ttsResponse.ok) {
+            const errorData = await ttsResponse.text();
+            console.error('ai33 minimax tts error:', errorData);
+            return NextResponse.json(
+                { error: 'Failed to start cloned voice generation. Please try again.' },
+                { status: 500 }
+            );
+        }
+
+        const ttsResult = await ttsResponse.json();
+        if (!ttsResult.success || !ttsResult.task_id) {
+            return NextResponse.json(
+                { error: 'Failed to create cloned voice task' },
+                { status: 500 }
+            );
+        }
+
+        const taskResult = await pollTaskStatus(ttsResult.task_id, apiKey);
         const audioUrl = taskResult?.metadata?.audio_url;
 
         if (!audioUrl) {
@@ -126,8 +176,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             audioUrl,
-            taskId: startResult.task_id,
-            creditsRemaining: startResult.ec_remain_credits,
+            taskId: ttsResult.task_id,
+            clonedVoiceId: String(clonedVoiceId),
+            creditsRemaining: ttsResult.ec_remain_credits,
             voiceName: voiceName || null,
             text,
         });

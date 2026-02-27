@@ -36,31 +36,47 @@ const DEFAULT_MOODS = {
 const VOICE_PROFILE_OPTIONS = [
   {
     key: 'voice1',
-    label: 'Voice 1 - Celestine',
+    label: 'Voice 1',
     femaleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE1_FEMALE || 'EXAVITQu4vr4xnSDxMaL',
     maleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE1_MALE || 'pNInz6obpgDQGcFmaJgB',
   },
   {
     key: 'voice2',
-    label: 'Voice 2 - Matilda',
+    label: 'Voice 2',
     femaleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE2_FEMALE || 'XrExE9yKIg1WjnnlVkGX',
     maleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE2_MALE || 'TxGEqnHWrfWFTfGW9XjX',
   },
   {
     key: 'voice3',
-    label: 'Voice 3 - Lily',
+    label: 'Voice 3',
     femaleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE3_FEMALE || 'pFZP5JQG7iQjIQuC4Bku',
     maleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE3_MALE || 'VR6AewLTigWG4xSOukaG',
   },
   {
     key: 'voice4',
-    label: 'Voice 4 - Dorothy',
+    label: 'Voice 4',
     femaleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE4_FEMALE || 'ThT5KcBeYPX3keUQqHPh',
     maleVoiceId: process.env.NEXT_PUBLIC_VOICE_PROFILE4_MALE || 'onwK4e9ZLuTAKqWW03F9',
   },
 ]
 
 const cloneMoodTemplate = () => ({ ...DEFAULT_MOODS })
+
+const VOICE_LABEL_BY_KEY: Record<string, string> = {
+  voice1: 'Voice 1',
+  voice2: 'Voice 2',
+  voice3: 'Voice 3',
+  voice4: 'Voice 4',
+}
+
+function normalizeVoiceLabel(key: string, label?: string | null) {
+  const preset = VOICE_LABEL_BY_KEY[key]
+  if (preset) return preset
+  if (typeof label === 'string' && label.includes(' - ')) {
+    return label.split(' - ')[0].trim()
+  }
+  return label || key
+}
 
 function normalizeVoicePayload(raw: any) {
   // New shape: { version: 2, selectedProfileKey, profiles: { voice1: { label, moods } } }
@@ -71,7 +87,7 @@ function normalizeVoicePayload(raw: any) {
         ? (value as any).moods
         : value
       profiles[key] = {
-        label: (value as any)?.label || key,
+        label: normalizeVoiceLabel(String(key), (value as any)?.label),
         voiceIdByGender: (value as any)?.voiceIdByGender || null,
         moods: {
           ...cloneMoodTemplate(),
@@ -101,7 +117,7 @@ function normalizeVoicePayload(raw: any) {
       selectedProfileKey: 'voice1',
       profiles: {
         voice1: {
-          label: 'Voice 1 - Celestine',
+          label: 'Voice 1',
           voiceIdByGender: null,
           moods: {
             ...cloneMoodTemplate(),
@@ -410,6 +426,7 @@ export default function EditMemorialPage() {
       formData.append('file', cloneVoiceAudio)
       formData.append('text', cloneVoiceText.trim())
       formData.append('voiceName', cloneVoiceName.trim() || `${memorial?.name || 'Memorial'} Voice`)
+      formData.append('gender', gender || memorial?.gender || 'female')
 
       const response = await fetch('/api/clone-voice', {
         method: 'POST',
@@ -722,6 +739,9 @@ export default function EditMemorialPage() {
           <button onClick={() => setTab('bio')} className={`py-2 px-4 ${tab === 'bio' ? 'border-b-2 border-memorial-accent dark:border-memorialDark-accent font-semibold text-memorial-text dark:text-memorialDark-text' : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors'}`}>
             Bio & Settings
           </button>
+          <button onClick={() => setTab('voices')} className={`py-2 px-4 ${tab === 'voices' ? 'border-b-2 border-memorial-accent dark:border-memorialDark-accent font-semibold text-memorial-text dark:text-memorialDark-text' : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors'}`}>
+            AI Voices
+          </button>
           <button onClick={() => setTab('gallery')} className={`py-2 px-4 ${tab === 'gallery' ? 'border-b-2 border-memorial-accent dark:border-memorialDark-accent font-semibold text-memorial-text dark:text-memorialDark-text' : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors'}`}>
             Memory Lane
           </button>
@@ -798,7 +818,19 @@ export default function EditMemorialPage() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-memorial-divider dark:border-memorialDark-divider space-y-4">
+              <button
+                type="submit"
+                className="btn-primary w-full"
+              >
+                Save Changes
+              </button>
+            </form>
+          )}
+
+          {/* === TAB 2: AI Voices === */}
+          {tab === 'voices' && (
+            <form onSubmit={handleUpdateBio} className="space-y-6">
+              <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Mic size={18} className="text-memorial-accent dark:text-memorialDark-accent" />
                   <h4 className="text-base font-semibold text-memorial-text dark:text-memorialDark-text">Voice Tribute</h4>
@@ -997,12 +1029,12 @@ export default function EditMemorialPage() {
                 type="submit"
                 className="btn-primary w-full"
               >
-                Save Changes
+                Save Voice Settings
               </button>
             </form>
           )}
 
-          {/* === TAB 2: Memory Lane === */}
+          {/* === TAB 3: Memory Lane === */}
           {tab === 'gallery' && (
             <div>
               {!isPaid && (
@@ -1126,7 +1158,7 @@ export default function EditMemorialPage() {
             </div>
           )}
 
-          {/* === TAB 3: Letters of Love === */}
+          {/* === TAB 4: Letters of Love === */}
           {tab === 'letters' && (
             <div className="space-y-6">
               {!isPaid && (

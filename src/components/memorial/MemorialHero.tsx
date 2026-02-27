@@ -19,6 +19,22 @@ const DEFAULT_MOODS = {
     frustrated: null,
 };
 
+const VOICE_LABEL_BY_KEY: Record<string, string> = {
+    voice1: 'Voice 1',
+    voice2: 'Voice 2',
+    voice3: 'Voice 3',
+    voice4: 'Voice 4',
+};
+
+function normalizeVoiceLabel(key: string, label?: string | null) {
+    const preset = VOICE_LABEL_BY_KEY[key];
+    if (preset) return preset;
+    if (typeof label === 'string' && label.includes(' - ')) {
+        return label.split(' - ')[0].trim();
+    }
+    return label || key;
+}
+
 function buildVoiceProfiles(aiVoiceMoods: any) {
     if (!aiVoiceMoods || typeof aiVoiceMoods !== 'object') return {};
 
@@ -28,7 +44,7 @@ function buildVoiceProfiles(aiVoiceMoods: any) {
         Object.entries(aiVoiceMoods.profiles).forEach(([key, value]: [string, any]) => {
             const sourceMoods = value?.moods && typeof value.moods === 'object' ? value.moods : value || {};
             parsed[key] = {
-                label: value?.label || key,
+                label: normalizeVoiceLabel(key, value?.label),
                 moods: {
                     ...DEFAULT_MOODS,
                     longing: typeof sourceMoods.longing === 'string' ? sourceMoods.longing : null,
