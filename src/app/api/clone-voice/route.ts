@@ -2,6 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const CARTESIA_BASE_URL = 'https://api.cartesia.ai';
 
+function buildCartesiaHeaders(apiKey: string, apiVersion: string, includeJson = false): Record<string, string> {
+    const headers: Record<string, string> = {
+        'Authorization': `Bearer ${apiKey}`,
+        'X-API-Key': apiKey,
+        'Cartesia-Version': apiVersion,
+    };
+    if (includeJson) headers['Content-Type'] = 'application/json';
+    return headers;
+}
+
+async function readProviderError(response: Response) {
+    const fallback = `Provider request failed with status ${response.status}`;
+    try {
+        const body = await response.text();
+        if (!body) return fallback;
+        return `${fallback}: ${body.slice(0, 800)}`;
+    } catch {
+        return fallback;
+    }
+}
+
 function normalizeLanguage(raw: string) {
     const value = raw.trim().toLowerCase();
     if (!value) return 'en';
@@ -55,19 +76,16 @@ export async function POST(request: NextRequest) {
 
         const cloneResponse = await fetch(`${CARTESIA_BASE_URL}/voices/clone`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Cartesia-Version': apiVersion,
-            },
+            headers: buildCartesiaHeaders(apiKey, apiVersion),
             body: clonePayload,
         });
 
         if (!cloneResponse.ok) {
-            const errorBody = await cloneResponse.text();
-            console.error('Cartesia clone error:', errorBody);
+            const providerError = await readProviderError(cloneResponse);
+            console.error('Cartesia clone error:', providerError);
             return NextResponse.json(
-                { error: 'Failed to clone voice sample. Please try again.' },
-                { status: 500 }
+                { error: providerError },
+                { status: cloneResponse.status || 500 }
             );
         }
 
@@ -79,11 +97,7 @@ export async function POST(request: NextRequest) {
 
         const ttsResponse = await fetch(`${CARTESIA_BASE_URL}/tts/bytes`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Cartesia-Version': apiVersion,
-                'Content-Type': 'application/json',
-            },
+            headers: buildCartesiaHeaders(apiKey, apiVersion, true),
             body: JSON.stringify({
                 model_id: process.env.CARTESIA_TTS_MODEL_ID || 'sonic-2',
                 transcript: text,
@@ -101,11 +115,11 @@ export async function POST(request: NextRequest) {
         });
 
         if (!ttsResponse.ok) {
-            const errorBody = await ttsResponse.text();
-            console.error('Cartesia TTS error:', errorBody);
+            const providerError = await readProviderError(ttsResponse);
+            console.error('Cartesia TTS error:', providerError);
             return NextResponse.json(
-                { error: 'Failed to generate cloned voice audio. Please try again.' },
-                { status: 500 }
+                { error: providerError },
+                { status: ttsResponse.status || 500 }
             );
         }
 
