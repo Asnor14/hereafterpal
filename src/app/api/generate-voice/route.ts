@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { uploadVoiceBufferToCloudinary } from '@/lib/cloudinaryVoice';
 
 // ElevenLabs Voice IDs (via ai33.pro) based on gender and age.
 // Env overrides are supported if you want to tune specific voices.
@@ -176,20 +177,41 @@ export async function POST(request: NextRequest) {
         // Step 2: Poll for task completion
         const taskResult = await pollTaskStatus(ttsResult.task_id, apiKey);
 
-        // Step 3: Get audio URL from completed task
-        const audioUrl = taskResult.metadata?.audio_url;
+        // Step 3: Get provider audio URL from completed task
+        const providerAudioUrl = taskResult.metadata?.audio_url;
 
-        if (!audioUrl) {
+        if (!providerAudioUrl) {
             return NextResponse.json(
                 { error: 'No audio URL in response' },
                 { status: 500 }
             );
         }
 
-        // Return the audio URL
+        // Step 4: Persist voice audio in Cloudinary for stable public playback
+        const providerAudioResponse = await fetch(String(providerAudioUrl));
+        if (!providerAudioResponse.ok) {
+            return NextResponse.json(
+                { error: 'Failed to download generated voice audio' },
+                { status: 500 }
+            );
+        }
+
+        const audioBuffer = Buffer.from(await providerAudioResponse.arrayBuffer());
+        if (!audioBuffer.length) {
+            return NextResponse.json(
+                { error: 'Generated voice audio is empty' },
+                { status: 500 }
+            );
+        }
+
+        const audioUrl = await uploadVoiceBufferToCloudinary(audioBuffer, {
+            publicIdPrefix: `ai-${resolvedVoiceId}`,
+        });
+
+        // Return persisted Cloudinary URL
         return NextResponse.json({
             success: true,
-            audioUrl: audioUrl,
+            audioUrl,
             taskId: ttsResult.task_id,
             mood: mood,
             gender: gender,

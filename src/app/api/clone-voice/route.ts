@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { uploadVoiceBufferToCloudinary } from '@/lib/cloudinaryVoice';
 
 const AI33PRO_BASE_URL = 'https://api.ai33.pro';
 
@@ -205,7 +206,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'No audio data returned from AI33 Minimax' }, { status: 500 });
         }
 
-        const audioUrl = `data:audio/mpeg;base64,${audioBuffer.toString('base64')}`;
+        const audioUrl = await uploadVoiceBufferToCloudinary(audioBuffer, {
+            publicIdPrefix: `clone-${String(clonedVoiceId)}`,
+        });
 
         return NextResponse.json({
             success: true,
