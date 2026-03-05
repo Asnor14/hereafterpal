@@ -130,9 +130,26 @@ export async function POST(request: NextRequest) {
         }
 
         const cloneResult = await cloneResponse.json();
-        const clonedVoiceId = cloneResult?.cloned_voice_id;
-        if (!cloneResult?.success || !clonedVoiceId) {
-            return NextResponse.json({ error: cloneResult?.error || 'Failed to create cloned voice' }, { status: 500 });
+        const clonedVoiceId =
+            cloneResult?.cloned_voice_id ??
+            cloneResult?.voice_id ??
+            cloneResult?.data?.cloned_voice_id ??
+            cloneResult?.data?.voice_id ??
+            cloneResult?.data?.voice?.id;
+        const cloneSucceeded = cloneResult?.success === true || cloneResult?.success === 'true';
+
+        // AI33/Minimax payloads can vary by account tier/version; proceed when a voice id exists.
+        if (!clonedVoiceId) {
+            const providerMsg =
+                cloneResult?.error ||
+                cloneResult?.message ||
+                cloneResult?.msg ||
+                `Clone response missing voice id: ${JSON.stringify(cloneResult).slice(0, 600)}`;
+            console.error('AI33 Minimax clone unexpected payload:', cloneResult);
+            return NextResponse.json({ error: providerMsg }, { status: 500 });
+        }
+        if (!cloneSucceeded) {
+            console.warn('AI33 clone returned non-true success but provided voice id:', cloneResult);
         }
 
         const ttsResponse = await fetch(`${AI33PRO_BASE_URL}/v1m/task/text-to-speech`, {
