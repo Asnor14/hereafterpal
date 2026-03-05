@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, MessageSquareHeart, ChevronRight, LogIn, Home, BookOpen, Camera, MessageCircle } from 'lucide-react';
+import { Menu, X, ChevronRight, LogIn, Home, BookOpen, Camera, MessageCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabaseClient';
 import { type User } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
@@ -134,7 +135,13 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
               <Menu size={24} />
             </button>
             <Link href="/dashboard" className="top-nav-logo">
-              <MessageSquareHeart size={22} className="text-memorial-accent dark:text-memorialDark-accent" />
+              <Image
+                src="/logo_memorial.png"
+                alt="HereAfter, Pal logo"
+                width={28}
+                height={28}
+                className="h-7 w-auto rounded-sm"
+              />
               <span className="top-nav-logo-text text-sm">
                 <span className="decorative-letter">H</span>ereAfter, <span className="decorative-letter">P</span>al
               </span>
@@ -166,7 +173,13 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
           {/* Logo - Minimalist */}
           <Link href="/" className="flex items-center gap-3 z-50 relative group" onClick={closeMenu}>
             <div className="bg-memorial-accent/5 dark:bg-memorialDark-accent/5 p-2 rounded-md group-hover:bg-memorial-accent/10 transition-colors">
-              <MessageSquareHeart size={24} className="text-memorial-accent dark:text-memorialDark-accent" />
+              <Image
+                src="/logo_memorial.png"
+                alt="HereAfter, Pal logo"
+                width={24}
+                height={24}
+                className="h-6 w-auto"
+              />
             </div>
             <span className="font-serif font-bold text-xl text-memorial-text dark:text-memorialDark-text tracking-tight">
               HereAfter, Pal

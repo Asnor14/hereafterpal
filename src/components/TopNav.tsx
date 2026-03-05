@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { MessageSquareHeart, Menu, Bell, Search } from 'lucide-react';
+import Image from 'next/image';
+import { Menu, Bell, Search } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import ProfileDropdown from './ProfileDropdown';
 import SearchBar from './SearchBar';
@@ -34,7 +35,13 @@ export default function TopNav({ user, onSignOut, onMenuClick }) {
                         <Menu size={24} />
                     </button>
                     <Link href="/dashboard" className="top-nav-logo">
-                        <MessageSquareHeart size={28} className="text-memorial-accent dark:text-memorialDark-accent" />
+                        <Image
+                            src="/logo_memorial.png"
+                            alt="HereAfter, Pal logo"
+                            width={28}
+                            height={28}
+                            className="h-7 w-auto rounded-sm"
+                        />
                         <span className="top-nav-logo-text">
                             <span className="decorative-letter">H</span>ereafter, <span className="decorative-letter">P</span>al
                         </span>
