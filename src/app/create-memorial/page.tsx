@@ -698,12 +698,27 @@ export default function CreateMemorialPage() {
                     ? '__custom__'
                     : ''
               }
-              onChange={(e) => {
+              onChange={async (e) => {
                 const selectedRole = e.target.value
                 if (selectedRole === '__custom__') {
-                  const customRole = window.prompt('Type your relationship role', '')
-                  if (customRole !== null) {
-                    setCreatorRelationship(customRole.trim())
+                  const { isConfirmed, value } = await Swal.fire({
+                    title: 'Custom Relationship',
+                    input: 'text',
+                    inputLabel: 'Type your relationship role',
+                    inputPlaceholder: 'e.g. Sister, Brother, Friend',
+                    showCancelButton: true,
+                    confirmButtonText: 'Save',
+                    cancelButtonText: 'Cancel',
+                    inputValidator: (inputValue) => {
+                      if (!inputValue || !inputValue.trim()) {
+                        return 'Please type a role.'
+                      }
+                      return null
+                    }
+                  })
+
+                  if (isConfirmed && typeof value === 'string') {
+                    setCreatorRelationship(value.trim())
                   }
                 } else {
                   setCreatorRelationship(selectedRole)
