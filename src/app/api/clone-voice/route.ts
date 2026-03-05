@@ -131,8 +131,10 @@ export async function POST(request: NextRequest) {
 
         const cloneResult = await cloneResponse.json();
         const clonedVoiceId =
+            cloneResult?.clone_voice_id ??
             cloneResult?.cloned_voice_id ??
             cloneResult?.voice_id ??
+            cloneResult?.data?.clone_voice_id ??
             cloneResult?.data?.cloned_voice_id ??
             cloneResult?.data?.voice_id ??
             cloneResult?.data?.voice?.id;
