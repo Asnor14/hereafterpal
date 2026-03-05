@@ -170,7 +170,8 @@ export default function EditMemorialPage() {
   const [cloneVoiceAudio, setCloneVoiceAudio] = useState<File | null>(null)
   const [cloneVoiceName, setCloneVoiceName] = useState('')
   const [cloneVoiceText, setCloneVoiceText] = useState('')
-  const [cloneVoiceLanguage, setCloneVoiceLanguage] = useState('en')
+  const [cloneVoiceLanguage, setCloneVoiceLanguage] = useState('English')
+  const [cloneVoiceGender, setCloneVoiceGender] = useState('female')
   const [selectedVoiceProfileKey, setSelectedVoiceProfileKey] = useState('voice1')
   const [voiceProfilesPayload, setVoiceProfilesPayload] = useState<any>({
     version: 2,
@@ -229,6 +230,7 @@ export default function EditMemorialPage() {
     setFamilyPassword(memorialData.family_password || '')
     setVisibility(memorialData.visibility || 'private')
     setGender(memorialData.gender || 'female')
+    setCloneVoiceGender(memorialData.gender || 'female')
     setVoiceMessage(memorialData.voice_message || '')
 
     const normalizedVoice = normalizeVoicePayload(memorialData.ai_voice_moods)
@@ -411,6 +413,10 @@ export default function EditMemorialPage() {
       toast.error('Please enter a message for cloned voice.')
       return
     }
+    if (!cloneVoiceGender) {
+      toast.error('Please select a gender for cloning.')
+      return
+    }
     if (!isPaidPlan(subscription?.plan)) {
       toast.error('Cloned voice is a paid feature.')
       return
@@ -427,7 +433,7 @@ export default function EditMemorialPage() {
       formData.append('file', cloneVoiceAudio)
       formData.append('text', cloneVoiceText.trim())
       formData.append('voiceName', cloneVoiceName.trim() || `${memorial?.name || 'Memorial'} Voice`)
-      formData.append('gender', gender || memorial?.gender || 'female')
+      formData.append('gender', cloneVoiceGender)
       formData.append('targetLang', cloneVoiceLanguage)
 
       const response = await fetch('/api/clone-voice', {
@@ -974,8 +980,19 @@ export default function EditMemorialPage() {
                           onChange={(e) => setCloneVoiceLanguage(e.target.value)}
                           className="select-memorial w-full"
                         >
-                          <option value="en">English</option>
-                          <option value="tagalog">Tagalog</option>
+                          <option value="English">English</option>
+                          <option value="Filipino">Filipino</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">Gender</label>
+                        <select
+                          value={cloneVoiceGender}
+                          onChange={(e) => setCloneVoiceGender(e.target.value)}
+                          className="select-memorial w-full"
+                        >
+                          <option value="female">Female</option>
+                          <option value="male">Male</option>
                         </select>
                       </div>
                       <div>

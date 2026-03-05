@@ -57,7 +57,8 @@ export default function CreateMemorialPage() {
   const [cloneVoiceAudio, setCloneVoiceAudio] = useState(null)
   const [cloneVoiceName, setCloneVoiceName] = useState('')
   const [cloneVoiceText, setCloneVoiceText] = useState('')
-  const [cloneVoiceLanguage, setCloneVoiceLanguage] = useState('en')
+  const [cloneVoiceLanguage, setCloneVoiceLanguage] = useState('English')
+  const [cloneVoiceGender, setCloneVoiceGender] = useState('female')
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string | null>>({})
@@ -307,6 +308,15 @@ export default function CreateMemorialPage() {
       })
       return
     }
+    if (!cloneVoiceGender) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gender Required',
+        text: 'Please select a gender for cloning',
+        confirmButtonColor: '#9b8b6f',
+      })
+      return
+    }
 
     setIsGeneratingVoice(true)
     setVoiceProgress(0)
@@ -323,7 +333,7 @@ export default function CreateMemorialPage() {
       formData.append('file', cloneVoiceAudio)
       formData.append('text', cloneVoiceText.trim())
       formData.append('voiceName', cloneVoiceName.trim() || `${name || 'Memorial'} Voice`)
-      formData.append('gender', gender || 'female')
+      formData.append('gender', cloneVoiceGender)
       formData.append('targetLang', cloneVoiceLanguage)
 
       const response = await fetch('/api/clone-voice', {
@@ -1134,8 +1144,23 @@ export default function CreateMemorialPage() {
                     onChange={(e) => setCloneVoiceLanguage(e.target.value)}
                     className={inputClasses(false)}
                   >
-                    <option value="en">English</option>
-                    <option value="tagalog">Tagalog</option>
+                    <option value="English">English</option>
+                    <option value="Filipino">Filipino</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="cloneVoiceGender" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
+                    Gender
+                  </label>
+                  <select
+                    id="cloneVoiceGender"
+                    value={cloneVoiceGender}
+                    onChange={(e) => setCloneVoiceGender(e.target.value)}
+                    className={inputClasses(false)}
+                  >
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
                   </select>
                 </div>
 
