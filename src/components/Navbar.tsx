@@ -138,9 +138,9 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
               <Image
                 src="/hereafterpal_logo.png"
                 alt="HereAfter, Pal logo"
-                width={28}
-                height={28}
-                className="h-7 w-auto rounded-sm"
+                width={36}
+                height={36}
+                className="h-9 w-auto rounded-sm"
               />
               <span className="top-nav-logo-text text-sm">
                 <span className="decorative-letter">H</span>ereAfter, <span className="decorative-letter">P</span>al
@@ -176,9 +176,9 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
               <Image
                 src="/hereafterpal_logo.png"
                 alt="HereAfter, Pal logo"
-                width={24}
-                height={24}
-                className="h-6 w-auto"
+                width={32}
+                height={32}
+                className="h-8 w-auto"
               />
             </div>
             <span className="font-serif font-bold text-xl text-memorial-text dark:text-memorialDark-text tracking-tight">

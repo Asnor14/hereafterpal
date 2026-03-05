@@ -38,9 +38,9 @@ export default function TopNav({ user, onSignOut, onMenuClick }) {
                         <Image
                             src="/hereafterpal_logo.png"
                             alt="HereAfter, Pal logo"
-                            width={28}
-                            height={28}
-                            className="h-7 w-auto rounded-sm"
+                            width={36}
+                            height={36}
+                            className="h-9 w-auto rounded-sm"
                         />
                         <span className="top-nav-logo-text">
                             <span className="decorative-letter">H</span>ereafter, <span className="decorative-letter">P</span>al

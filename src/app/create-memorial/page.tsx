@@ -19,6 +19,8 @@ const MOOD_OPTIONS = [
   { value: 'frustrated', label: 'Frustrated' },
 ]
 
+const RELATIONSHIP_PRESETS = ['Mom', 'Dad', 'Wife', 'Husband']
+
 export default function CreateMemorialPage() {
   const supabase = createClient()
   const router = useRouter()
@@ -687,23 +689,36 @@ export default function CreateMemorialPage() {
             <label htmlFor="relationship" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
               Your Relationship to the Person <span className="text-memorial-textSecondary">(Optional)</span>
             </label>
-            <input
+            <select
               id="relationship"
-              type="text"
-              list="relationship-role-options"
-              value={creatorRelationship}
+              value={
+                RELATIONSHIP_PRESETS.includes(creatorRelationship)
+                  ? creatorRelationship
+                  : creatorRelationship
+                    ? '__custom__'
+                    : ''
+              }
               onChange={(e) => {
-                setCreatorRelationship(e.target.value)
+                const selectedRole = e.target.value
+                if (selectedRole === '__custom__') {
+                  const customRole = window.prompt('Type your relationship role', '')
+                  if (customRole !== null) {
+                    setCreatorRelationship(customRole.trim())
+                  }
+                } else {
+                  setCreatorRelationship(selectedRole)
+                }
                 if (errors.relationship) setErrors(prev => ({ ...prev, relationship: null }))
               }}
-              className={inputClasses(errors.relationship)}
-              placeholder="e.g. Mom, Dad, Sister, Brother, Friend"
-              maxLength={60}
-            />
-            <datalist id="relationship-role-options">
-              <option value="Mom" />
-              <option value="Dad" />
-            </datalist>
+              className={`w-full ${selectClasses(Boolean(errors.relationship))}`}
+            >
+              <option value="">Select relationship (optional)</option>
+              <option value="Mom">Mom</option>
+              <option value="Dad">Dad</option>
+              <option value="Wife">Wife</option>
+              <option value="Husband">Husband</option>
+              <option value="__custom__">Optional - Type manually</option>
+            </select>
           </div>
 
           {/* Gender */}
