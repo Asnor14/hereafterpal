@@ -970,7 +970,7 @@ export default function EditMemorialPage() {
                           onChange={(e) => setCloneVoiceName(e.target.value)}
                           className="input-memorial w-full"
                           maxLength={60}
-                          placeholder="e.g. Mom Memorial Voice"
+                          placeholder="e.g. Memorial Voice"
                         />
                       </div>
                       <div>

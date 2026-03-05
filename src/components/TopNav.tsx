@@ -36,7 +36,7 @@ export default function TopNav({ user, onSignOut, onMenuClick }) {
                     </button>
                     <Link href="/dashboard" className="top-nav-logo">
                         <Image
-                            src="/logo_memorial.png"
+                            src="/hereafterpal_logo.png"
                             alt="HereAfter, Pal logo"
                             width={28}
                             height={28}

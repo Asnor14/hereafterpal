@@ -136,7 +136,7 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
             </button>
             <Link href="/dashboard" className="top-nav-logo">
               <Image
-                src="/logo_memorial.png"
+                src="/hereafterpal_logo.png"
                 alt="HereAfter, Pal logo"
                 width={28}
                 height={28}
@@ -174,7 +174,7 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
           <Link href="/" className="flex items-center gap-3 z-50 relative group" onClick={closeMenu}>
             <div className="bg-memorial-accent/5 dark:bg-memorialDark-accent/5 p-2 rounded-md group-hover:bg-memorial-accent/10 transition-colors">
               <Image
-                src="/logo_memorial.png"
+                src="/hereafterpal_logo.png"
                 alt="HereAfter, Pal logo"
                 width={24}
                 height={24}

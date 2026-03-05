@@ -446,10 +446,6 @@ export default function CreateMemorialPage() {
       newErrors.voice = 'Please wait for voice generation to complete'
     }
 
-    if (!creatorRelationship) {
-      newErrors.relationship = 'Please select your relationship'
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -515,7 +511,7 @@ export default function CreateMemorialPage() {
           user_id: user.id,
           date_of_birth: dateOfBirth,
           date_of_passing: dateOfPassing,
-          creator_relationship: creatorRelationship,
+          creator_relationship: creatorRelationship.trim() || null,
           // AI Voice fields
           voice_message: selectedVoiceMessage || null,
           voice_generation_status: generatedAudioUrl ? 'generated' : 'pending',
@@ -689,27 +685,25 @@ export default function CreateMemorialPage() {
           {/* Your Relationship */}
           <div className="space-y-2">
             <label htmlFor="relationship" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
-              Your Relationship to the Person <span className="text-red-500">*</span>
+              Your Relationship to the Person <span className="text-memorial-textSecondary">(Optional)</span>
             </label>
-            <select
+            <input
               id="relationship"
+              type="text"
+              list="relationship-role-options"
               value={creatorRelationship}
               onChange={(e) => {
                 setCreatorRelationship(e.target.value)
                 if (errors.relationship) setErrors(prev => ({ ...prev, relationship: null }))
               }}
-              className={`w-full ${selectClasses(errors.relationship)}`}
-            >
-              <option value="">Select your role...</option>
-              <option value="Mom">I am the Mom</option>
-              <option value="Dad">I am the Dad</option>
-            </select>
-            {errors.relationship && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <AlertCircle size={14} />
-                {errors.relationship}
-              </p>
-            )}
+              className={inputClasses(errors.relationship)}
+              placeholder="e.g. Mom, Dad, Sister, Brother, Friend"
+              maxLength={60}
+            />
+            <datalist id="relationship-role-options">
+              <option value="Mom" />
+              <option value="Dad" />
+            </datalist>
           </div>
 
           {/* Gender */}
@@ -1129,7 +1123,7 @@ export default function CreateMemorialPage() {
                     value={cloneVoiceName}
                     onChange={(e) => setCloneVoiceName(e.target.value)}
                     className={inputClasses(false)}
-                    placeholder="e.g. Mom Memorial Voice"
+                    placeholder="e.g. Memorial Voice"
                     maxLength={60}
                   />
                 </div>

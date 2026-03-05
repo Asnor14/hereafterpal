@@ -25,7 +25,7 @@ interface ShareLinkModalProps {
 export default function ShareLinkModal({ isOpen, onClose, memorials, isPaid, onUpdate }: ShareLinkModalProps) {
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
-    const [tempRelationship, setTempRelationship] = useState('');
+    const [tempRelationshipById, setTempRelationshipById] = useState<Record<string, string>>({});
     const supabase = createClient();
 
     const handleCopy = (id: string) => {
@@ -42,18 +42,15 @@ export default function ShareLinkModal({ isOpen, onClose, memorials, isPaid, onU
     };
 
     const handleUpdateRelationship = async (id: string) => {
-        if (!tempRelationship) {
-            toast.error('Please select your relationship');
-            return;
-        }
-
+        const relationship = (tempRelationshipById[id] || '').trim();
         const generatedPass = generatePassword();
-        const toastId = toast.loading('Saving relationship...');
+        setUpdatingId(id);
+        const toastId = toast.loading('Generating Family Key...');
         try {
             const { error } = await supabase
                 .from('memorials')
                 .update({
-                    creator_relationship: tempRelationship,
+                    creator_relationship: relationship || null,
                     family_password: generatedPass
                 })
                 .eq('id', id);
@@ -61,17 +58,20 @@ export default function ShareLinkModal({ isOpen, onClose, memorials, isPaid, onU
             if (error) throw error;
 
             toast.dismiss(toastId);
-            toast.success('Relationship and Password generated!');
-            if (onUpdate) onUpdate(id, {
-                creator_relationship: tempRelationship,
-                family_password: generatedPass
-            });
+            toast.success('Family Key generated!');
+            if (onUpdate) {
+                onUpdate(id, {
+                    creator_relationship: relationship || undefined,
+                    family_password: generatedPass
+                });
+            }
+            setTempRelationshipById((prev) => ({ ...prev, [id]: relationship }));
             setUpdatingId(null);
-            // We don't clear tempRelationship yet so we can show the password in the UI
         } catch (error: any) {
             toast.dismiss(toastId);
-            toast.error('Failed to update relationship. Please ensure the database schema is up to date.');
+            toast.error('Failed to generate Family Key. Please ensure the database schema is up to date.');
             console.error('Update relationship error:', error.message || error);
+            setUpdatingId(null);
         }
     };
 
@@ -80,7 +80,6 @@ export default function ShareLinkModal({ isOpen, onClose, memorials, isPaid, onU
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-memorial-surface dark:bg-memorialDark-surface rounded-memorial-lg p-6 max-w-lg w-full shadow-2xl border border-memorial-border dark:border-memorialDark-border relative animate-in fade-in zoom-in duration-200">
-                {/* Close button */}
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 text-memorial-textTertiary hover:text-memorial-text dark:text-memorialDark-textTertiary dark:hover:text-memorialDark-text transition-colors"
@@ -117,7 +116,7 @@ export default function ShareLinkModal({ isOpen, onClose, memorials, isPaid, onU
                     </div>
                 ) : memorials.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-memorial-textSecondary">You haven't created any memorials yet.</p>
+                        <p className="text-memorial-textSecondary">You haven&apos;t created any memorials yet.</p>
                         <Link href="/create-memorial" className="text-memorial-accent font-medium mt-2 inline-block" onClick={onClose}>
                             Create your first memorial
                         </Link>
@@ -134,11 +133,11 @@ export default function ShareLinkModal({ isOpen, onClose, memorials, isPaid, onU
                                         <span className="font-semibold text-sm truncate">{memorial.name}</span>
                                         <div className="flex flex-col gap-0.5">
                                             <span className="text-[10px] text-memorial-textTertiary uppercase tracking-widest">
-                                                {memorial.creator_relationship ? `Your Relation: ${memorial.creator_relationship}` : '⚠️ Relationship Missing'}
+                                                {memorial.creator_relationship ? `Your Role: ${memorial.creator_relationship}` : 'Your Role: Not set'}
                                             </span>
-                                            {memorial.creator_relationship && memorial.family_password && (
+                                            {memorial.family_password && (
                                                 <span className="text-[10px] text-memorial-accent font-medium">
-                                                    Key for {memorial.creator_relationship === 'Mom' ? 'Dad' : 'Mom'}: <code className="bg-memorial-accent/10 px-1 rounded">{memorial.family_password}</code>
+                                                    Family Key: <code className="bg-memorial-accent/10 px-1 rounded">{memorial.family_password}</code>
                                                 </span>
                                             )}
                                         </div>
@@ -153,53 +152,60 @@ export default function ShareLinkModal({ isOpen, onClose, memorials, isPaid, onU
                                     </Link>
                                 </div>
 
-                                {memorial.creator_relationship ? (
-                                    <div className="space-y-3">
-                                        <button
-                                            onClick={() => handleCopy(memorial.id)}
-                                            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-memorial text-sm font-medium transition-all ${copiedId === memorial.id
-                                                ? 'bg-green-500 text-white'
-                                                : 'bg-memorial-accent text-white hover:opacity-90'
-                                                }`}
-                                        >
-                                            {copiedId === memorial.id ? <Check size={16} /> : <Copy size={16} />}
-                                            {copiedId === memorial.id ? 'Copied URL' : 'Copy Invitation Link'}
-                                        </button>
-                                        {memorial.family_password && (
-                                            <p className="text-[10px] text-memorial-textTertiary text-center italic">
-                                                Share the key above with the other family member.
-                                            </p>
-                                        )}
-                                    </div>
-                                ) : (
+                                <div className="space-y-3">
+                                    <button
+                                        onClick={() => handleCopy(memorial.id)}
+                                        className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-memorial text-sm font-medium transition-all ${copiedId === memorial.id
+                                            ? 'bg-green-500 text-white'
+                                            : 'bg-memorial-accent text-white hover:opacity-90'
+                                            }`}
+                                    >
+                                        {copiedId === memorial.id ? <Check size={16} /> : <Copy size={16} />}
+                                        {copiedId === memorial.id ? 'Copied URL' : 'Copy Invitation Link'}
+                                    </button>
+                                    {memorial.family_password && (
+                                        <p className="text-[10px] text-memorial-textTertiary text-center italic">
+                                            Share this Family Key to let trusted members join this memorial.
+                                        </p>
+                                    )}
+                                </div>
+
+                                {!memorial.family_password && (
                                     <div className="space-y-3 pt-2 border-t border-memorial-border/20">
                                         <p className="text-[11px] text-memorial-textSecondary italic">
-                                            Select your relationship to this person to generate a shared family key.
+                                            Add your role (optional), then generate a Family Key.
                                         </p>
                                         <div className="flex gap-2">
-                                            <select
-                                                value={updatingId === memorial.id ? tempRelationship : ''}
+                                            <input
+                                                type="text"
+                                                list="relationship-role-options-share"
+                                                placeholder="e.g. Mom, Dad, Sister, Brother, Friend"
+                                                value={tempRelationshipById[memorial.id] ?? memorial.creator_relationship ?? ''}
                                                 onChange={(e) => {
-                                                    setUpdatingId(memorial.id);
-                                                    setTempRelationship(e.target.value);
+                                                    setTempRelationshipById((prev) => ({
+                                                        ...prev,
+                                                        [memorial.id]: e.target.value
+                                                    }));
                                                 }}
-                                                className="flex-1 bg-white dark:bg-memorialDark-surface border border-memorial-border dark:border-memorialDark-border rounded-memorial px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-memorial-accent appearance-none"
-                                            >
-                                                <option value="">Select Role...</option>
-                                                <option value="Mom">I am the Mom</option>
-                                                <option value="Dad">I am the Dad</option>
-                                            </select>
+                                                maxLength={60}
+                                                className="flex-1 bg-white dark:bg-memorialDark-surface border border-memorial-border dark:border-memorialDark-border rounded-memorial px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-memorial-accent"
+                                            />
                                             <button
                                                 onClick={() => handleUpdateRelationship(memorial.id)}
-                                                className="px-4 py-2 bg-memorial-accent text-white rounded-memorial text-xs font-medium hover:opacity-90 shadow-sm"
+                                                disabled={updatingId === memorial.id}
+                                                className="px-4 py-2 bg-memorial-accent text-white rounded-memorial text-xs font-medium hover:opacity-90 shadow-sm disabled:opacity-60"
                                             >
-                                                Save & Generate
+                                                Generate Key
                                             </button>
                                         </div>
                                     </div>
                                 )}
                             </div>
                         ))}
+                        <datalist id="relationship-role-options-share">
+                            <option value="Mom" />
+                            <option value="Dad" />
+                        </datalist>
                     </div>
                 )}
 

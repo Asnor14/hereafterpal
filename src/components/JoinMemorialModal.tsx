@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
-import { X, Key, Search, Check } from 'lucide-react';
+import { X, Key, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface JoinMemorialModalProps {
@@ -13,6 +13,7 @@ interface JoinMemorialModalProps {
 
 export default function JoinMemorialModal({ isOpen, onClose, onSuccess }: JoinMemorialModalProps) {
     const [key, setKey] = useState('');
+    const [role, setRole] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
     const supabase = createClient();
 
@@ -34,7 +35,7 @@ export default function JoinMemorialModal({ isOpen, onClose, onSuccess }: JoinMe
             // 1. Find the memorial with this family key
             const { data: memorial, error: fetchError } = await supabase
                 .from('memorials')
-                .select('id, creator_relationship, name')
+                .select('id, name')
                 .eq('family_password', key.toUpperCase())
                 .single();
 
@@ -42,16 +43,15 @@ export default function JoinMemorialModal({ isOpen, onClose, onSuccess }: JoinMe
                 throw new Error('Invalid Family Key or memorial not found');
             }
 
-            // 2. Determine the collaborator role
-            const role = memorial.creator_relationship === 'Mom' ? 'Dad' : 'Mom';
-
-            // 3. Link user to memorial in memorial_access
+            // 2. Link user to memorial in memorial_access
             const { error: accessError } = await supabase
                 .from('memorial_access')
                 .upsert({
                     memorial_id: memorial.id,
                     user_id: session.user.id,
-                    role: role
+                    role: role.trim() || null
+                }, {
+                    onConflict: 'memorial_id,user_id'
                 });
 
             if (accessError) throw accessError;
@@ -59,6 +59,7 @@ export default function JoinMemorialModal({ isOpen, onClose, onSuccess }: JoinMe
             toast.dismiss(toastId);
             toast.success(`Successfully joined ${memorial.name}'s memorial!`);
             setKey('');
+            setRole('');
             onSuccess();
             onClose();
         } catch (error: any) {
@@ -113,6 +114,23 @@ export default function JoinMemorialModal({ isOpen, onClose, onSuccess }: JoinMe
                         />
                     </div>
 
+                    <div className="relative">
+                        <input
+                            type="text"
+                            list="relationship-role-options-join"
+                            placeholder="Your role (optional, e.g. Mom, Dad, Sister, Brother)"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
+                            maxLength={60}
+                            className="w-full bg-white dark:bg-memorialDark-bg border border-memorial-border dark:border-memorialDark-border rounded-memorial px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-memorial-accent transition-all"
+                            disabled={isVerifying}
+                        />
+                        <datalist id="relationship-role-options-join">
+                            <option value="Mom" />
+                            <option value="Dad" />
+                        </datalist>
+                    </div>
+
                     <button
                         type="submit"
                         disabled={isVerifying || key.length !== 6}
@@ -121,7 +139,7 @@ export default function JoinMemorialModal({ isOpen, onClose, onSuccess }: JoinMe
                         {isVerifying ? 'Verifying...' : (
                             <>
                                 <Check size={18} />
-                                Claim Family Access
+                                Join Memorial
                             </>
                         )}
                     </button>
@@ -129,7 +147,7 @@ export default function JoinMemorialModal({ isOpen, onClose, onSuccess }: JoinMe
 
                 <div className="mt-6 pt-4 border-t border-memorial-border/20">
                     <p className="text-[11px] text-memorial-textTertiary text-center leading-relaxed">
-                        Joining gives you specialized "Mom" or "Dad" access to post private letters and view them in your dashboard. You will not have editing permissions.
+                        Joining lets you post private letters and view them in your dashboard. You will not have editing permissions.
                     </p>
                 </div>
             </div>
