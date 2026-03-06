@@ -83,6 +83,7 @@ export default function MemorialHero({ memorial }) {
     const [isPlaying, setIsPlaying] = useState(false);
     const [selectedVoiceKey, setSelectedVoiceKey] = useState('');
     const [selectedMood, setSelectedMood] = useState('longing');
+    const [isPortraitHero, setIsPortraitHero] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     if (!memorial) return null;
@@ -102,6 +103,10 @@ export default function MemorialHero({ memorial }) {
 
     // Check if image_url is a Cloudinary public_id
     const isCloudinaryImage = image_url && !image_url.startsWith('http');
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const resolvedImageUrl = isCloudinaryImage && cloudName
+        ? `https://res.cloudinary.com/${cloudName}/image/upload/f_auto,q_auto/${image_url}`
+        : image_url;
 
     useEffect(() => {
         if (voiceKeys.length === 0) {
@@ -157,35 +162,97 @@ export default function MemorialHero({ memorial }) {
         setIsPlaying(false);
     }, [selectedVoiceKey, selectedMood]);
 
+    useEffect(() => {
+        if (!resolvedImageUrl || typeof window === 'undefined') {
+            setIsPortraitHero(false);
+            return;
+        }
+
+        let isCancelled = false;
+        const img = new window.Image();
+
+        img.onload = () => {
+            if (isCancelled) return;
+            setIsPortraitHero(img.naturalHeight > img.naturalWidth);
+        };
+
+        img.onerror = () => {
+            if (isCancelled) return;
+            setIsPortraitHero(false);
+        };
+
+        img.src = resolvedImageUrl;
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [resolvedImageUrl]);
+
+    const heroHeightClass = isPortraitHero
+        ? 'h-[72vh] md:h-[82vh] lg:h-[92vh]'
+        : 'h-[60vh] md:h-[70vh] lg:h-[80vh]';
+
     return (
         <section className="relative w-full">
             {/* Hero with Background Image */}
-            <div className="relative w-full h-[60vh] md:h-[70vh] lg:h-[80vh] overflow-hidden">
+            <div className={`relative w-full overflow-hidden ${heroHeightClass}`}>
                 {/* Background Image */}
                 {image_url && (
-                    isCloudinaryImage ? (
-                        <CldImage
-                            src={image_url}
-                            alt={name || 'Memorial photo'}
-                            fill
-                            priority
-                            crop="fill"
-                            gravity="face"
-                            className="object-cover"
-                            style={{
-                                filter: 'brightness(0.7) saturate(0.85)',
-                            }}
-                        />
-                    ) : (
-                        <img
-                            src={image_url}
-                            alt={name || 'Memorial photo'}
-                            className="w-full h-full object-cover"
-                            style={{
-                                filter: 'brightness(0.7) saturate(0.85)',
-                            }}
-                        />
-                    )
+                    <>
+                        {isCloudinaryImage ? (
+                            <CldImage
+                                src={image_url}
+                                alt={name || 'Memorial photo'}
+                                fill
+                                priority
+                                sizes="100vw"
+                                crop="fill"
+                                gravity={isPortraitHero ? 'auto' : 'face'}
+                                className={`object-cover ${isPortraitHero ? 'scale-105' : ''}`}
+                                style={{
+                                    filter: isPortraitHero
+                                        ? 'brightness(0.42) saturate(0.8) blur(12px)'
+                                        : 'brightness(0.7) saturate(0.85)',
+                                }}
+                            />
+                        ) : (
+                            <img
+                                src={image_url}
+                                alt={name || 'Memorial photo'}
+                                className={`absolute inset-0 w-full h-full object-cover ${isPortraitHero ? 'scale-105' : ''}`}
+                                style={{
+                                    filter: isPortraitHero
+                                        ? 'brightness(0.42) saturate(0.8) blur(12px)'
+                                        : 'brightness(0.7) saturate(0.85)',
+                                }}
+                            />
+                        )}
+
+                        {isPortraitHero && (
+                            isCloudinaryImage ? (
+                                <CldImage
+                                    src={image_url}
+                                    alt={name || 'Memorial photo'}
+                                    fill
+                                    priority
+                                    sizes="100vw"
+                                    className="object-contain object-top"
+                                    style={{
+                                        filter: 'brightness(0.78) saturate(0.92)',
+                                    }}
+                                />
+                            ) : (
+                                <img
+                                    src={image_url}
+                                    alt={name || 'Memorial photo'}
+                                    className="absolute inset-0 w-full h-full object-contain object-top"
+                                    style={{
+                                        filter: 'brightness(0.78) saturate(0.92)',
+                                    }}
+                                />
+                            )
+                        )}
+                    </>
                 )}
 
                 {/* Fallback background */}
