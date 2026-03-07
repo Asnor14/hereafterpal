@@ -275,6 +275,10 @@ export default function EditMemorialPage() {
   }, [memorialId, supabase, router])
 
   const selectedVoiceProfile = voiceProfilesPayload?.profiles?.[selectedVoiceProfileKey]
+  const selectedVoiceProfileLabel =
+    voiceProfilesPayload?.profiles?.[selectedVoiceProfileKey]?.label
+    || VOICE_PROFILE_OPTIONS.find(p => p.key === selectedVoiceProfileKey)?.label
+    || selectedVoiceProfileKey
 
   useEffect(() => {
     const profileKeys = Object.keys(voiceProfilesPayload?.profiles || {})
@@ -325,6 +329,33 @@ export default function EditMemorialPage() {
       },
       moods: cloneMoodTemplate(),
     }
+  }
+
+  const updateVoiceProfileLabel = (profileKey: string, rawLabel: string) => {
+    setVoiceProfilesPayload((prev: any) => {
+      const current = prev || { version: 2, selectedProfileKey: profileKey, profiles: {} }
+      const option = VOICE_PROFILE_OPTIONS.find(p => p.key === profileKey)
+      const profile = current?.profiles?.[profileKey] || {
+        label: option?.label || profileKey,
+        voiceIdByGender: {
+          female: option?.femaleVoiceId || null,
+          male: option?.maleVoiceId || null,
+        },
+        moods: cloneMoodTemplate(),
+      }
+
+      return {
+        ...current,
+        selectedProfileKey: current.selectedProfileKey || profileKey,
+        profiles: {
+          ...(current.profiles || {}),
+          [profileKey]: {
+            ...profile,
+            label: rawLabel.trim() || option?.label || profileKey,
+          },
+        },
+      }
+    })
   }
 
   const upsertCurrentGeneratedAudio = (audioUrl: string, nextLabel?: string | null) => {
@@ -437,10 +468,15 @@ export default function EditMemorialPage() {
     }, 500)
 
     try {
+      const effectiveCloneVoiceName =
+        cloneVoiceName.trim()
+        || selectedVoiceProfileLabel
+        || `${memorial?.name || 'Memorial'} Voice`
+
       const formData = new FormData()
       formData.append('file', cloneVoiceAudio)
       formData.append('text', cloneVoiceText.trim())
-      formData.append('voiceName', cloneVoiceName.trim() || `${memorial?.name || 'Memorial'} Voice`)
+      formData.append('voiceName', effectiveCloneVoiceName)
       formData.append('gender', cloneVoiceGender)
       formData.append('targetLang', cloneVoiceLanguage)
 
@@ -454,7 +490,7 @@ export default function EditMemorialPage() {
       setGeneratedAudioUrl(data.audioUrl)
       upsertCurrentGeneratedAudio(
         data.audioUrl,
-        data.voiceName || cloneVoiceName.trim() || `${memorial?.name || 'Memorial'} Voice`
+        data.voiceName || effectiveCloneVoiceName
       )
       setVoiceProgress(100)
       setVoiceMessage(cloneVoiceText.trim())
@@ -515,6 +551,26 @@ export default function EditMemorialPage() {
     if (error) {
       toast.error(error.message)
     } else {
+      const labelSyncResults = await Promise.all(
+        Object.entries(normalized.profiles || {}).map(async ([profileKey, profile]: [string, any]) => {
+          const { error: tributeError } = await supabase
+            .from('memorial_voice_tributes')
+            .update({
+              profile_label: typeof profile?.label === 'string' && profile.label.trim()
+                ? profile.label.trim()
+                : null,
+            })
+            .eq('memorial_id', memorialId)
+            .eq('profile_key', profileKey)
+
+          return tributeError
+        })
+      )
+
+      const firstLabelSyncError = labelSyncResults.find(Boolean)
+      if (firstLabelSyncError) {
+        console.error('Voice label sync error:', firstLabelSyncError.message)
+      }
       toast.success('Memorial updated!')
     }
   }
@@ -914,6 +970,23 @@ export default function EditMemorialPage() {
                         ))}
                       </select>
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text">
+                      Voice Display Name
+                    </label>
+                    <input
+                      type="text"
+                      value={selectedVoiceProfileLabel}
+                      onChange={(e) => updateVoiceProfileLabel(selectedVoiceProfileKey, e.target.value)}
+                      className="input-memorial w-full"
+                      maxLength={60}
+                      placeholder="e.g. Tatay"
+                    />
+                    <p className="text-xs text-memorial-textSecondary mt-1">
+                      This name appears on the public memorial voice dropdown.
+                    </p>
                   </div>
 
                   <div>
