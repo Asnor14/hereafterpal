@@ -171,6 +171,7 @@ export default function EditMemorialPage() {
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false)
   const [voiceProgress, setVoiceProgress] = useState(0)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
+  const [isSavingVoiceProfileName, setIsSavingVoiceProfileName] = useState(false)
   const [cloneVoiceAudio, setCloneVoiceAudio] = useState<File | null>(null)
   const [cloneVoiceName, setCloneVoiceName] = useState('')
   const [cloneVoiceText, setCloneVoiceText] = useState('')
@@ -356,6 +357,61 @@ export default function EditMemorialPage() {
         },
       }
     })
+  }
+
+  const syncVoiceProfileLabels = async (profiles: Record<string, any>) => {
+    const labelSyncResults = await Promise.all(
+      Object.entries(profiles || {}).map(async ([profileKey, profile]: [string, any]) => {
+        const { error: tributeError } = await supabase
+          .from('memorial_voice_tributes')
+          .update({
+            profile_label: typeof profile?.label === 'string' && profile.label.trim()
+              ? profile.label.trim()
+              : null,
+          })
+          .eq('memorial_id', memorialId)
+          .eq('profile_key', profileKey)
+
+        return tributeError
+      })
+    )
+
+    const firstLabelSyncError = labelSyncResults.find(Boolean)
+    if (firstLabelSyncError) {
+      console.error('Voice label sync error:', firstLabelSyncError.message)
+    }
+  }
+
+  const handleSaveVoiceProfileName = async () => {
+    const normalized = {
+      ...(voiceProfilesPayload || {}),
+      version: 2,
+      selectedProfileKey: selectedVoiceProfileKey,
+      profiles: voiceProfilesPayload?.profiles || {},
+    }
+
+    setIsSavingVoiceProfileName(true)
+    const toastId = toast.loading('Saving voice name...')
+
+    const { error } = await supabase
+      .from('memorials')
+      .update({
+        ai_voice_moods: normalized,
+      })
+      .eq('id', memorialId)
+
+    if (error) {
+      toast.dismiss(toastId)
+      setIsSavingVoiceProfileName(false)
+      toast.error(error.message)
+      return
+    }
+
+    await syncVoiceProfileLabels(normalized.profiles || {})
+
+    toast.dismiss(toastId)
+    setIsSavingVoiceProfileName(false)
+    toast.success('Voice name updated!')
   }
 
   const upsertCurrentGeneratedAudio = (audioUrl: string, nextLabel?: string | null) => {
@@ -551,26 +607,7 @@ export default function EditMemorialPage() {
     if (error) {
       toast.error(error.message)
     } else {
-      const labelSyncResults = await Promise.all(
-        Object.entries(normalized.profiles || {}).map(async ([profileKey, profile]: [string, any]) => {
-          const { error: tributeError } = await supabase
-            .from('memorial_voice_tributes')
-            .update({
-              profile_label: typeof profile?.label === 'string' && profile.label.trim()
-                ? profile.label.trim()
-                : null,
-            })
-            .eq('memorial_id', memorialId)
-            .eq('profile_key', profileKey)
-
-          return tributeError
-        })
-      )
-
-      const firstLabelSyncError = labelSyncResults.find(Boolean)
-      if (firstLabelSyncError) {
-        console.error('Voice label sync error:', firstLabelSyncError.message)
-      }
+      await syncVoiceProfileLabels(normalized.profiles || {})
       toast.success('Memorial updated!')
     }
   }
@@ -987,6 +1024,14 @@ export default function EditMemorialPage() {
                     <p className="text-xs text-memorial-textSecondary mt-1">
                       This name appears on the public memorial voice dropdown.
                     </p>
+                    <button
+                      type="button"
+                      onClick={handleSaveVoiceProfileName}
+                      disabled={isSavingVoiceProfileName}
+                      className="mt-3 inline-flex items-center justify-center rounded-memorial border border-memorial-border dark:border-memorialDark-border px-4 py-2 text-sm font-medium text-memorial-text dark:text-memorialDark-text hover:bg-memorial-surfaceAlt dark:hover:bg-memorialDark-surfaceAlt transition-colors disabled:opacity-60"
+                    >
+                      {isSavingVoiceProfileName ? 'Saving...' : 'Save Voice Name'}
+                    </button>
                   </div>
 
                   <div>
