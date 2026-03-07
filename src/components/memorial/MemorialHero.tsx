@@ -27,12 +27,16 @@ const VOICE_LABEL_BY_KEY: Record<string, string> = {
 };
 
 function normalizeVoiceLabel(key: string, label?: string | null) {
+    if (typeof label === 'string' && label.includes(' - ')) {
+        const trimmed = label.split(' - ')[0].trim();
+        if (trimmed) return trimmed;
+    }
+    if (typeof label === 'string' && label.trim()) {
+        return label.trim();
+    }
     const preset = VOICE_LABEL_BY_KEY[key];
     if (preset) return preset;
-    if (typeof label === 'string' && label.includes(' - ')) {
-        return label.split(' - ')[0].trim();
-    }
-    return label || key;
+    return key;
 }
 
 function buildVoiceProfiles(aiVoiceMoods: any) {

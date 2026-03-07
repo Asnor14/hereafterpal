@@ -291,7 +291,7 @@ export default function BillingPage() {
                         Submit Payment Proof
                     </h3>
                     <p className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary mb-4">
-                        Upload your GCash, Maya, or SeaBank receipt. Our AI will automatically extract the details.
+                        Upload your GCash receipt. Our AI will automatically extract the details.
                     </p>
                     <ReceiptUploader
                         onExtracted={handleReceiptExtracted}

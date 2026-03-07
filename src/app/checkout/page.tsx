@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Check, Upload, ArrowRight, Shield, QrCode, CreditCard, Banknote, Smartphone, Copy, Loader2, ImageIcon } from 'lucide-react';
+import { Check, Upload, Shield, Smartphone, Loader2, ImageIcon } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import toast from 'react-hot-toast';
@@ -14,8 +15,6 @@ import { pricingPlans } from '@/app/pricing/data';
 
 const paymentMethods = [
     { id: 'gcash', name: 'GCash', icon: Smartphone, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    { id: 'maya', name: 'Maya', icon: CreditCard, color: 'text-green-500', bg: 'bg-green-500/10' },
-    { id: 'maribank', name: 'SeaBank / Maribank', icon: Banknote, color: 'text-orange-500', bg: 'bg-orange-500/10' },
 ];
 
 export default function CheckoutPage() {
@@ -25,7 +24,6 @@ export default function CheckoutPage() {
     const planKey = searchParams.get('plan') || 'basic';
     const billingCycle = searchParams.get('billing') || 'monthly';
 
-    const [selectedMethod, setSelectedMethod] = useState('gcash');
     const [step, setStep] = useState(1); // 1: Payment, 2: Upload, 3: Confirm
     const [file, setFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,11 +48,6 @@ export default function CheckoutPage() {
         };
         getUser();
     }, []);
-
-    const handleCopy = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast.success('Copied to clipboard!');
-    };
 
     const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -114,7 +107,7 @@ export default function CheckoutPage() {
                 user_id: userId,
                 amount: extractedData?.amount || parseFloat((price || '0').replace(/[₱,]/g, '')),
                 currency: extractedData?.currency || 'PHP',
-                payment_method: extractedData?.payment_method || paymentMethods.find(m => m.id === selectedMethod)?.name || selectedMethod,
+                payment_method: extractedData?.payment_method || paymentMethods[0].name,
                 reference_no: extractedData?.reference_no || `MANUAL-${Date.now()}`,
                 status: 'pending',
             };
@@ -219,17 +212,13 @@ export default function CheckoutPage() {
                                     animate={{ opacity: 1, x: 0 }}
                                     className="space-y-6"
                                 >
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 gap-4">
                                         {paymentMethods.map((method) => {
                                             const Icon = method.icon;
                                             return (
-                                                <button
+                                                <div
                                                     key={method.id}
-                                                    onClick={() => setSelectedMethod(method.id)}
-                                                    className={`p-4 rounded-memorial border-2 text-left transition-all duration-200 ${selectedMethod === method.id
-                                                        ? 'border-memorial-accent bg-memorial-accent/5 dark:bg-memorialDark-accent/5'
-                                                        : 'border-memorial-borderLight dark:border-memorialDark-border hover:border-memorial-accent/50'
-                                                        }`}
+                                                    className="p-4 rounded-memorial border-2 text-left transition-all duration-200 border-memorial-accent bg-memorial-accent/5 dark:bg-memorialDark-accent/5"
                                                 >
                                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${method.bg} ${method.color}`}>
                                                         <Icon size={20} />
@@ -237,7 +226,7 @@ export default function CheckoutPage() {
                                                     <div className="font-medium text-memorial-text dark:text-memorialDark-text">
                                                         {method.name}
                                                     </div>
-                                                </button>
+                                                </div>
                                             );
                                         })}
                                     </div>
@@ -246,43 +235,24 @@ export default function CheckoutPage() {
                                     <div className="bg-memorial-surface dark:bg-memorialDark-surface border border-memorial-borderLight dark:border-memorialDark-border rounded-memorial-xl p-6 md:p-8 text-center">
                                         <div className="mb-6">
                                             <h3 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text mb-2">
-                                                Scan via {paymentMethods.find(m => m.id === selectedMethod)?.name} App
+                                                Scan via GCash App
                                             </h3>
                                             <p className="text-sm text-memorial-textSecondary">
-                                                Use your mobile banking app to scan the QR code below
+                                                Use your GCash app to scan the QR code below
                                             </p>
                                         </div>
 
-                                        <div className="relative w-48 h-48 mx-auto mb-6 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
-                                            <div className="w-full h-full bg-gray-900 flex items-center justify-center rounded-lg text-white">
-                                                <QrCode size={64} />
-                                            </div>
+                                        <div className="relative w-56 h-56 mx-auto mb-6 bg-white p-3 rounded-xl shadow-sm border border-gray-200">
+                                            <Image
+                                                src="/gcashlogo.jpg"
+                                                alt="GCash QR code"
+                                                fill
+                                                className="object-contain rounded-lg"
+                                            />
                                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                                 <div className="bg-white p-1 rounded-full shadow-md">
                                                     <Shield size={24} className="text-memorial-accent" />
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="max-w-xs mx-auto space-y-3">
-                                            <div className="bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt p-3 rounded-lg flex items-center justify-between">
-                                                <div className="text-left">
-                                                    <div className="text-xs text-memorial-textTertiary">Account Name</div>
-                                                    <div className="font-medium text-memorial-text dark:text-memorialDark-text">Hereafter Pal Inc.</div>
-                                                </div>
-                                                <button onClick={() => handleCopy('Hereafter Pal Inc.')} className="p-2 hover:bg-black/5 rounded-full transition-colors">
-                                                    <Copy size={16} />
-                                                </button>
-                                            </div>
-
-                                            <div className="bg-memorial-surfaceAlt dark:bg-memorialDark-surfaceAlt p-3 rounded-lg flex items-center justify-between">
-                                                <div className="text-left">
-                                                    <div className="text-xs text-memorial-textTertiary">Account Number</div>
-                                                    <div className="font-mono font-medium text-memorial-text dark:text-memorialDark-text">0917 123 4567</div>
-                                                </div>
-                                                <button onClick={() => handleCopy('0917 123 4567')} className="p-2 hover:bg-black/5 rounded-full transition-colors">
-                                                    <Copy size={16} />
-                                                </button>
                                             </div>
                                         </div>
 

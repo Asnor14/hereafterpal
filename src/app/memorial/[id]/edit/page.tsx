@@ -70,12 +70,16 @@ const VOICE_LABEL_BY_KEY: Record<string, string> = {
 }
 
 function normalizeVoiceLabel(key: string, label?: string | null) {
+  if (typeof label === 'string' && label.includes(' - ')) {
+    const trimmed = label.split(' - ')[0].trim()
+    if (trimmed) return trimmed
+  }
+  if (typeof label === 'string' && label.trim()) {
+    return label.trim()
+  }
   const preset = VOICE_LABEL_BY_KEY[key]
   if (preset) return preset
-  if (typeof label === 'string' && label.includes(' - ')) {
-    return label.split(' - ')[0].trim()
-  }
-  return label || key
+  return key
 }
 
 function normalizeVoicePayload(raw: any) {
@@ -323,7 +327,7 @@ export default function EditMemorialPage() {
     }
   }
 
-  const upsertCurrentGeneratedAudio = (audioUrl: string) => {
+  const upsertCurrentGeneratedAudio = (audioUrl: string, nextLabel?: string | null) => {
     setVoiceProfilesPayload((prev: any) => {
       const current = prev || { version: 2, selectedProfileKey: selectedVoiceProfileKey, profiles: {} }
       const option = VOICE_PROFILE_OPTIONS.find(p => p.key === selectedVoiceProfileKey)
@@ -343,6 +347,10 @@ export default function EditMemorialPage() {
           ...(current.profiles || {}),
           [selectedVoiceProfileKey]: {
             ...profile,
+            label: normalizeVoiceLabel(
+              selectedVoiceProfileKey,
+              nextLabel || profile.label || option?.label || selectedVoiceProfileKey
+            ),
             moods: {
               ...cloneMoodTemplate(),
               ...(profile.moods || {}),
@@ -444,7 +452,10 @@ export default function EditMemorialPage() {
       if (!response.ok) throw new Error(data.error || 'Failed to clone voice')
 
       setGeneratedAudioUrl(data.audioUrl)
-      upsertCurrentGeneratedAudio(data.audioUrl)
+      upsertCurrentGeneratedAudio(
+        data.audioUrl,
+        data.voiceName || cloneVoiceName.trim() || `${memorial?.name || 'Memorial'} Voice`
+      )
       setVoiceProgress(100)
       setVoiceMessage(cloneVoiceText.trim())
       toast.success('Cloned voice generated.')
@@ -878,7 +889,9 @@ export default function EditMemorialPage() {
                         className="select-memorial w-full"
                       >
                         {VOICE_PROFILE_OPTIONS.map((profile) => (
-                          <option key={profile.key} value={profile.key}>{profile.label}</option>
+                          <option key={profile.key} value={profile.key}>
+                            {voiceProfilesPayload?.profiles?.[profile.key]?.label || profile.label}
+                          </option>
                         ))}
                         {existingProfileKeys
                           .filter((key) => !VOICE_PROFILE_OPTIONS.some((option) => option.key === key))
@@ -1044,7 +1057,9 @@ export default function EditMemorialPage() {
                         <div className="flex-1">
                           <p className="text-sm font-medium text-memorial-text dark:text-memorialDark-text">Voice Preview</p>
                           <p className="text-xs text-memorial-textSecondary">
-                            {VOICE_PROFILE_OPTIONS.find(p => p.key === selectedVoiceProfileKey)?.label || selectedVoiceProfileKey} - {MOOD_OPTIONS.find(m => m.value === voiceMood)?.label || voiceMood}
+                            {voiceProfilesPayload?.profiles?.[selectedVoiceProfileKey]?.label
+                              || VOICE_PROFILE_OPTIONS.find(p => p.key === selectedVoiceProfileKey)?.label
+                              || selectedVoiceProfileKey} - {MOOD_OPTIONS.find(m => m.value === voiceMood)?.label || voiceMood}
                           </p>
                         </div>
                         <Check size={18} className="text-green-500" />

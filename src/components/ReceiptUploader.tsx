@@ -99,7 +99,7 @@ export default function ReceiptUploader({ onExtracted, onCancel }: ReceiptUpload
                         Drop your receipt here or click to upload
                     </p>
                     <p className="text-sm text-memorial-textTertiary dark:text-memorialDark-textTertiary">
-                        Supports GCash, SeaBank, Maya receipts (JPG, PNG)
+                        Supports GCash receipts (JPG, PNG)
                     </p>
                     <input
                         id="receipt-input"
