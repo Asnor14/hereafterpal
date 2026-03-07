@@ -4,10 +4,10 @@ import { ClientLayout } from './client-layout';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'HereAfter, Pal - Eternal Digital Memorials',
+  title: 'HereafterPal - Eternal Digital Memorials',
   description: 'Create a lasting tribute for your loved ones with our secure, beautiful digital memorial service.',
   openGraph: {
-    title: 'HereAfter, Pal - Eternal Digital Memorials',
+    title: 'HereafterPal - Eternal Digital Memorials',
     description: 'Create a lasting tribute for your loved ones.',
     type: 'website',
   },

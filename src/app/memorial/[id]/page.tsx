@@ -324,7 +324,7 @@ export default function MemorialProfilePage() {
         <p className="max-w-2xl mx-auto px-4">
           This memorial page is a place to celebrate, remember, and honor a life well lived.
           <br />
-          Created with love by HereAfter, Pal
+          Created with love by HereafterPal
         </p>
       </footer>
     </div>

@@ -137,13 +137,13 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
             <Link href="/dashboard" className="top-nav-logo">
               <Image
                 src="/hereafterpal_logo.png"
-                alt="HereAfter, Pal logo"
+                alt="HereafterPal logo"
                 width={36}
                 height={36}
                 className="h-9 w-auto rounded-sm"
               />
               <span className="top-nav-logo-text text-sm">
-                <span className="decorative-letter">H</span>ereAfter, <span className="decorative-letter">P</span>al
+                HereafterPal
               </span>
             </Link>
           </div>
@@ -175,14 +175,14 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
             <div className="bg-memorial-accent/5 dark:bg-memorialDark-accent/5 p-2 rounded-md group-hover:bg-memorial-accent/10 transition-colors">
               <Image
                 src="/hereafterpal_logo.png"
-                alt="HereAfter, Pal logo"
+                alt="HereafterPal logo"
                 width={32}
                 height={32}
                 className="h-8 w-auto"
               />
             </div>
             <span className="font-serif font-bold text-xl text-memorial-text dark:text-memorialDark-text tracking-tight">
-              HereAfter, Pal
+              HereafterPal
             </span>
           </Link>
 

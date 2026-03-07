@@ -29,7 +29,7 @@ export default function HeroSection() {
                             <div className="flex items-center gap-4">
                                 <span className="h-px w-8 bg-memorial-accent/50"></span>
                                 <span className="text-xs md:text-sm uppercase tracking-widest text-memorial-textTertiary font-medium font-sans">
-                                    The HereAfter Archive No. 01
+                                    The HereafterPal Archive No. 01
                                 </span>
                             </div>
 

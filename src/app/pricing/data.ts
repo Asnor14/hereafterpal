@@ -20,7 +20,7 @@ export const pricingPlans: PricingPlan[] = [
     planName: 'Free Trial',
     price: '₱0',
     frequency: 'preview',
-    description: 'Experience Hereafter, Pal before committing.',
+    description: 'Experience HereafterPal before committing.',
     features: [
       'Create 1 Memorial Preview',
       'Explore all features',

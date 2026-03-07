@@ -9,9 +9,13 @@ export default function QuickActionsSection() {
     const router = useRouter();
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, margin: "-100px" });
+    const memorialLinks = {
+        human: '/memorial/475f3a08-63c1-43be-bebd-27ca6439eaf1',
+        pet: '/memorial/82fadf76-b055-4d66-8e53-0230f683b375',
+    };
 
     const handleSelection = (type: 'human' | 'pet') => {
-        router.push(`/create?type=${type}`);
+        router.push(memorialLinks[type]);
     };
 
     return (

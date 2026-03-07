@@ -22,10 +22,10 @@ export function Footer() {
           {/* Logo and Copyright */}
           <div className="text-center md:text-left">
             <Link href="/" className="font-serif text-lg text-memorial-text dark:text-memorialDark-text mb-2 inline-block">
-              <span className="decorative-letter">H</span>ereafter, <span className="decorative-letter">P</span>al
+              HereafterPal
             </Link>
             <p className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">
-              © {currentYear} Hereafter, Pal. All rights reserved.
+              © {currentYear} HereafterPal. All rights reserved.
             </p>
           </div>
 

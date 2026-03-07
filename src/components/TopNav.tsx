@@ -37,13 +37,13 @@ export default function TopNav({ user, onSignOut, onMenuClick }) {
                     <Link href="/dashboard" className="top-nav-logo">
                         <Image
                             src="/hereafterpal_logo.png"
-                            alt="HereAfter, Pal logo"
+                            alt="HereafterPal logo"
                             width={36}
                             height={36}
                             className="h-9 w-auto rounded-sm"
                         />
                         <span className="top-nav-logo-text">
-                            <span className="decorative-letter">H</span>ereafter, <span className="decorative-letter">P</span>al
+                            HereafterPal
                         </span>
                     </Link>
                 </div>

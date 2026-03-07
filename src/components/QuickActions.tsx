@@ -143,7 +143,7 @@ export default function QuickActions() {
                     href="/about"
                     className="text-memorial-accent dark:text-memorialDark-accent hover:underline inline-flex items-center gap-2"
                 >
-                    Learn more about how Hereafter, Pal works
+                    Learn more about how HereafterPal works
                     <ArrowRight size={16} />
                 </Link>
             </motion.div>

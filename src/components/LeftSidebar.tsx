@@ -267,7 +267,7 @@ function LeftSidebar({ user, isOpen, onClose }: { user: any, isOpen: boolean, on
                 <div className="p-6">
                     <Link href="/dashboard" className="block">
                         <h1 className="text-2xl font-serif text-memorial-text dark:text-memorialDark-text tracking-tight">
-                            HereAfter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
+                            Hereafter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
                         </h1>
                     </Link>
                 </div>
@@ -304,7 +304,7 @@ function LeftSidebar({ user, isOpen, onClose }: { user: any, isOpen: boolean, on
                             <div className="p-4 flex items-center justify-between border-b border-memorial-border dark:border-memorialDark-border">
                                 <Link href="/dashboard" onClick={onClose}>
                                     <h1 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text tracking-tight">
-                                        HereAfter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
+                                        Hereafter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
                                     </h1>
                                 </Link>
                                 <button
