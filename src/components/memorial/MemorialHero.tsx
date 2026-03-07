@@ -385,7 +385,7 @@ export default function MemorialHero({ memorial }) {
                                 In Loving Memory
                             </h2>
                             <div
-                                className="text-base md:text-base-desktop leading-relaxed text-memorial-textSecondary dark:text-memorialDark-textSecondary text-center max-w-3xl mx-auto"
+                                className="text-base md:text-base-desktop leading-relaxed text-memorial-textSecondary dark:text-memorialDark-textSecondary text-justify max-w-3xl mx-auto"
                                 style={{ whiteSpace: 'pre-wrap' }}
                             >
                                 {bio}

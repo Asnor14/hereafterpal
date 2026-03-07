@@ -245,7 +245,7 @@ export default function Guestbook({
         isLocked: !!folder.password_hash,
         folder,
       })),
-      { key: 'guest', label: 'From: Guests', isLocked: false, folder: null },
+      { key: 'guest', label: 'From: Starngers', isLocked: false, folder: null },
     ];
 
     return { buckets, cards, folders };
@@ -318,8 +318,8 @@ export default function Guestbook({
         name: formData.name.trim(),
         message: formData.message.trim(),
         senderFolderId: formData.senderFolderId === 'guest' ? null : formData.senderFolderId,
-        senderName: folder?.name || 'Guest',
-        role: folder?.name || 'Guest',
+        senderName: folder?.name || 'Starngers',
+        role: folder?.name || 'Starngers',
       });
       setFormData({ name: '', message: '', senderFolderId: 'guest' });
       setIsFormOpen(false);
@@ -330,7 +330,7 @@ export default function Guestbook({
 
   const selectedMessages = selectedBoxKey ? prepared.buckets[selectedBoxKey] || [] : [];
   const selectedTitle = selectedBoxKey === 'guest'
-    ? 'Letters from Guests'
+    ? 'Letters from Starngers'
     : `Letters from ${prepared.folders.find((f) => `folder:${f.id}` === selectedBoxKey)?.name || 'Sender'}`;
 
   return (
@@ -448,7 +448,7 @@ export default function Guestbook({
                       onChange={handleChange}
                       className="w-full px-4 py-3 rounded-memorial bg-memorial-bg dark:bg-memorialDark-bg border border-memorial-divider dark:border-memorialDark-divider text-memorial-text dark:text-memorialDark-text focus:border-memorial-accent dark:focus:border-memorialDark-accent transition-colors duration-200 text-sm"
                     >
-                      <option value="guest">Guest / Friend</option>
+                      <option value="guest">Starngers / Friend</option>
                       {prepared.folders.map((folder) => (
                         <option key={folder.id} value={folder.id}>
                           {folder.name}{folder.password_hash ? ' (Password)' : ''}

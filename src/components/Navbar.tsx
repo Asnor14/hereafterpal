@@ -92,7 +92,7 @@ export function Navbar({ isDashboard = false, user: propUser, onSignOut, onMenuC
   ];
 
   const memorialLinks = [
-    { href: '#home', label: 'Home', id: 'home', icon: Home },
+    { href: '/', label: 'Home', id: 'home', icon: Home },
     { href: '#life-story', label: 'Life Story', id: 'life-story', icon: BookOpen },
     { href: '#photos', label: 'Photos', id: 'photos', icon: Camera },
     { href: '#guestbook', label: 'Letters of Love', id: 'guestbook', icon: MessageCircle },
