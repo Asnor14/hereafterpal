@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import { Trash, Lock, Upload, Image as ImageIcon, X, Plus, Eye, Mic, Play, Pause, Loader2, Check } from 'lucide-react'
 import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
-import { canAccess, getPhotoLimit, isPaidPlan } from '@/lib/planFeatures'
+import { canAccess, getPhotoLimit, hasServicePlan } from '@/lib/planFeatures'
 import { processImage } from '@/lib/imageUtils'
 
 interface PendingUpload {
@@ -281,6 +281,7 @@ export default function EditMemorialPage() {
     || VOICE_PROFILE_OPTIONS.find(p => p.key === selectedVoiceProfileKey)?.label
     || selectedVoiceProfileKey
   const supportsVoiceTributes = memorial?.service_type !== 'PAWS'
+  const hasMemorialPlanAccess = hasServicePlan(subscription?.plan, memorial?.service_type)
 
   useEffect(() => {
     const profileKeys = Object.keys(voiceProfilesPayload?.profiles || {})
@@ -470,7 +471,7 @@ export default function EditMemorialPage() {
       toast.error('Please enter a message for the AI voice.')
       return
     }
-    if (!isPaidPlan(subscription?.plan)) {
+    if (!hasMemorialPlanAccess) {
       toast.error('AI voice is a paid feature.')
       return
     }
@@ -532,7 +533,7 @@ export default function EditMemorialPage() {
       toast.error('Please select a gender for cloning.')
       return
     }
-    if (!isPaidPlan(subscription?.plan)) {
+    if (!hasMemorialPlanAccess) {
       toast.error('Cloned voice is a paid feature.')
       return
     }
@@ -593,7 +594,7 @@ export default function EditMemorialPage() {
     }
 
     // Check for publishing
-    if (visibility === 'public' && !isPaidPlan(subscription?.plan)) {
+    if (visibility === 'public' && !hasMemorialPlanAccess) {
       toast.error('You must have a paid plan to make a memorial public.')
       setVisibility('private')
       return
@@ -854,7 +855,7 @@ export default function EditMemorialPage() {
     )
   }
 
-  const isPaid = isPaidPlan(subscription?.plan)
+  const isPaid = hasMemorialPlanAccess
   const existingProfileKeys = Object.keys(voiceProfilesPayload?.profiles || {})
   const displayedLetters = activeFolderFilter
     ? letters.filter(letter => letter.sender_folder_id === activeFolderFilter)

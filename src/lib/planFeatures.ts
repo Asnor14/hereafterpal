@@ -2,6 +2,7 @@
 // Used across the app to gate features based on user's subscription plan
 
 export type PlanKey = 'free' | 'eternal_echo' | 'paws';
+export type ServiceType = 'ETERNAL ECHO' | 'PAWS';
 
 export type Feature =
     | 'memory_lane'
@@ -25,7 +26,6 @@ const featureAccess: Record<PlanKey, Set<Feature>> = {
     paws: new Set([
         'memory_lane',
         'letters_of_love',
-        'pick_a_mood',
         'unlimited_photos',
         'publish_public',
     ]),
@@ -41,9 +41,28 @@ const photoLimits: Record<PlanKey, number> = {
 // Memorial creation limits per plan
 const memorialLimits: Record<PlanKey, number> = {
     free: 1,
-    eternal_echo: Infinity,
-    paws: Infinity,
+    eternal_echo: 1,
+    paws: 1,
 };
+
+export function getPlanKeyForServiceType(serviceType: string | null | undefined): PlanKey {
+    if (serviceType === 'PAWS') return 'paws';
+    if (serviceType === 'ETERNAL ECHO') return 'eternal_echo';
+    return 'free';
+}
+
+export function hasServicePlan(
+    plan: string | string[] | null | undefined,
+    serviceType: string | null | undefined
+): boolean {
+    if (!plan) return false;
+
+    const requiredPlan = getPlanKeyForServiceType(serviceType);
+    if (requiredPlan === 'free') return false;
+
+    const plans = Array.isArray(plan) ? plan : [plan];
+    return plans.some((p) => p === requiredPlan);
+}
 
 /**
  * Check if a plan has access to a specific feature.

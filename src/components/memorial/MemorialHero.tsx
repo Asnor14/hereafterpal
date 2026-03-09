@@ -93,7 +93,8 @@ export default function MemorialHero({ memorial }) {
     if (!memorial) return null;
 
     const { name, date_of_birth, date_of_passing, image_url, quote, bio, ai_voice_moods, service_type } = memorial;
-    const supportsVoiceTributes = service_type !== 'PAWS';
+    const isPawsMemorial = service_type === 'PAWS';
+    const supportsVoiceTributes = !isPawsMemorial;
     const voiceProfiles = buildVoiceProfiles(ai_voice_moods);
     const voiceKeys = Object.keys(voiceProfiles);
     const selectedProfile = selectedVoiceKey ? voiceProfiles[selectedVoiceKey] : null;
@@ -193,7 +194,9 @@ export default function MemorialHero({ memorial }) {
         };
     }, [resolvedImageUrl]);
 
-    const heroHeightClass = isPortraitHero
+    const useContainedHeroImage = isPortraitHero || isPawsMemorial;
+
+    const heroHeightClass = useContainedHeroImage
         ? 'h-[72vh] md:h-[82vh] lg:h-[92vh]'
         : 'h-[60vh] md:h-[70vh] lg:h-[80vh]';
 
@@ -212,10 +215,10 @@ export default function MemorialHero({ memorial }) {
                                 priority
                                 sizes="100vw"
                                 crop="fill"
-                                gravity={isPortraitHero ? 'auto' : 'face'}
-                                className={`object-cover ${isPortraitHero ? 'scale-105' : ''}`}
+                                gravity={useContainedHeroImage ? 'auto' : 'face'}
+                                className={`object-cover ${useContainedHeroImage ? 'scale-105' : ''}`}
                                 style={{
-                                    filter: isPortraitHero
+                                    filter: useContainedHeroImage
                                         ? 'brightness(0.42) saturate(0.8) blur(12px)'
                                         : 'brightness(0.7) saturate(0.85)',
                                 }}
@@ -224,16 +227,16 @@ export default function MemorialHero({ memorial }) {
                             <img
                                 src={image_url}
                                 alt={name || 'Memorial photo'}
-                                className={`absolute inset-0 w-full h-full object-cover ${isPortraitHero ? 'scale-105' : ''}`}
+                                className={`absolute inset-0 w-full h-full object-cover ${useContainedHeroImage ? 'scale-105' : ''}`}
                                 style={{
-                                    filter: isPortraitHero
+                                    filter: useContainedHeroImage
                                         ? 'brightness(0.42) saturate(0.8) blur(12px)'
                                         : 'brightness(0.7) saturate(0.85)',
                                 }}
                             />
                         )}
 
-                        {isPortraitHero && (
+                        {useContainedHeroImage && (
                             isCloudinaryImage ? (
                                 <CldImage
                                     src={image_url}
@@ -241,18 +244,22 @@ export default function MemorialHero({ memorial }) {
                                     fill
                                     priority
                                     sizes="100vw"
-                                    className="object-contain object-top"
+                                    className={`object-contain ${isPawsMemorial ? 'object-center' : 'object-top'}`}
                                     style={{
-                                        filter: 'brightness(0.78) saturate(0.92)',
+                                        filter: isPawsMemorial
+                                            ? 'brightness(0.84) saturate(0.98)'
+                                            : 'brightness(0.78) saturate(0.92)',
                                     }}
                                 />
                             ) : (
                                 <img
                                     src={image_url}
                                     alt={name || 'Memorial photo'}
-                                    className="absolute inset-0 w-full h-full object-contain object-top"
+                                    className={`absolute inset-0 w-full h-full object-contain ${isPawsMemorial ? 'object-center' : 'object-top'}`}
                                     style={{
-                                        filter: 'brightness(0.78) saturate(0.92)',
+                                        filter: isPawsMemorial
+                                            ? 'brightness(0.84) saturate(0.98)'
+                                            : 'brightness(0.78) saturate(0.92)',
                                     }}
                                 />
                             )

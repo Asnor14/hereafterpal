@@ -63,8 +63,8 @@ export const pricingPlans: PricingPlan[] = [
     features: [
       'Full access to Memory Lane',
       'Full access to Letters of Love',
-      'Full access to Pick-A-Mood AI Voice',
       'Unlimited photo uploads',
+      'Publish memorials publicly',
       'Pet-themed memorial templates',
       'Standard support',
     ],
