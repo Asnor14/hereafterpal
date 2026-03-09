@@ -121,6 +121,22 @@ export default function CreateMemorialPage() {
   }, [checkingLimit, memorialCount, subscription, router])
 
   const isPaid = isPaidPlan(subscription?.plan)
+  const supportsVoiceTributes = serviceType !== 'PAWS'
+
+  useEffect(() => {
+    if (supportsVoiceTributes) return
+
+    setGeneratedAudioUrl(null)
+    setIsPlayingAudio(false)
+    setVoiceType('ai-voice')
+    setVoiceMessage('')
+    setVoiceMood('longing')
+    setCloneVoiceAudio(null)
+    setCloneVoiceName('')
+    setCloneVoiceText('')
+    setCloneVoiceLanguage('English')
+    setCloneVoiceGender('female')
+  }, [supportsVoiceTributes])
 
   // Character count for bio
   const maxBioLength = 5000
@@ -182,6 +198,16 @@ export default function CreateMemorialPage() {
 
   // Generate AI Voice
   const handleGenerateVoice = async () => {
+    if (!supportsVoiceTributes) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Voice Tribute Unavailable',
+        text: 'AI voice features are only available for Eternal Echo memorials.',
+        confirmButtonColor: '#9b8b6f',
+      })
+      return
+    }
+
     if (!voiceMessage.trim()) {
       Swal.fire({
         icon: 'error',
@@ -281,6 +307,16 @@ export default function CreateMemorialPage() {
 
   // Generate Clone Voice
   const handleGenerateCloneVoice = async () => {
+    if (!supportsVoiceTributes) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Voice Tribute Unavailable',
+        text: 'AI voice features are only available for Eternal Echo memorials.',
+        confirmButtonColor: '#9b8b6f',
+      })
+      return
+    }
+
     if (!cloneVoiceAudio) {
       Swal.fire({
         icon: 'error',
@@ -485,21 +521,23 @@ export default function CreateMemorialPage() {
       const dateOfPassing = `${deathYear}-${deathMonth}-${deathDay}`
 
       // Build ai_voice_moods JSON
-      const aiVoiceMoods = {
+      const aiVoiceMoods = supportsVoiceTributes ? {
         longing: null,
         excited: null,
         stressed: null,
         frustrated: null,
-      }
+      } : null
 
-      if (generatedAudioUrl) {
+      if (supportsVoiceTributes && generatedAudioUrl && aiVoiceMoods) {
         const selectedMood = voiceType === 'ai-voice' ? voiceMood : 'longing'
         aiVoiceMoods[selectedMood] = generatedAudioUrl
       }
 
-      const selectedVoiceMessage = voiceType === 'ai-voice'
+      const selectedVoiceMessage = supportsVoiceTributes
+        ? (voiceType === 'ai-voice'
         ? voiceMessage.trim()
-        : cloneVoiceText.trim()
+        : cloneVoiceText.trim())
+        : null
 
       const { data, error } = await supabase
         .from('memorials')
@@ -516,7 +554,7 @@ export default function CreateMemorialPage() {
           creator_relationship: creatorRelationship.trim() || null,
           // AI Voice fields
           voice_message: selectedVoiceMessage || null,
-          voice_generation_status: generatedAudioUrl ? 'generated' : 'pending',
+          voice_generation_status: supportsVoiceTributes ? (generatedAudioUrl ? 'generated' : 'pending') : null,
           ai_voice_moods: aiVoiceMoods,
         })
         .select()
@@ -961,6 +999,7 @@ export default function CreateMemorialPage() {
           </div>
 
           {/* Voice Tribute Section */}
+          {supportsVoiceTributes ? (
           <div className="space-y-4 pt-6 border-t border-memorial-divider dark:border-memorialDark-divider">
             <div className="flex items-center gap-2">
               <Mic size={20} className="text-memorial-accent dark:text-memorialDark-accent" />
@@ -1285,6 +1324,19 @@ export default function CreateMemorialPage() {
               </p>
             )}
           </div>
+          ) : (
+          <div className="space-y-3 pt-6 border-t border-memorial-divider dark:border-memorialDark-divider">
+            <div className="flex items-center gap-2">
+              <Lock size={18} className="text-memorial-textTertiary dark:text-memorialDark-textTertiary" />
+              <h3 className="text-lg font-serif text-memorial-text dark:text-memorialDark-text">
+                Voice Tribute
+              </h3>
+            </div>
+            <p className="text-sm text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+              Voice features are not available for PAWS memorials.
+            </p>
+          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex flex-col-reverse sm:flex-row gap-4 pt-4 border-t border-memorial-divider dark:border-memorialDark-divider">

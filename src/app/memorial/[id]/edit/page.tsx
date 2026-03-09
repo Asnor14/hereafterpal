@@ -280,6 +280,7 @@ export default function EditMemorialPage() {
     voiceProfilesPayload?.profiles?.[selectedVoiceProfileKey]?.label
     || VOICE_PROFILE_OPTIONS.find(p => p.key === selectedVoiceProfileKey)?.label
     || selectedVoiceProfileKey
+  const supportsVoiceTributes = memorial?.service_type !== 'PAWS'
 
   useEffect(() => {
     const profileKeys = Object.keys(voiceProfilesPayload?.profiles || {})
@@ -289,6 +290,12 @@ export default function EditMemorialPage() {
       }
     }
   }, [selectedVoiceProfileKey, voiceProfilesPayload])
+
+  useEffect(() => {
+    if (!supportsVoiceTributes && tab === 'voices') {
+      setTab('bio')
+    }
+  }, [supportsVoiceTributes, tab])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -383,6 +390,11 @@ export default function EditMemorialPage() {
   }
 
   const handleSaveVoiceProfileName = async () => {
+    if (!supportsVoiceTributes) {
+      toast.error('Voice features are not available for PAWS memorials.')
+      return
+    }
+
     const normalized = {
       ...(voiceProfilesPayload || {}),
       version: 2,
@@ -450,6 +462,10 @@ export default function EditMemorialPage() {
   }
 
   const handleGenerateVoice = async () => {
+    if (!supportsVoiceTributes) {
+      toast.error('Voice features are not available for PAWS memorials.')
+      return
+    }
     if (!voiceMessage.trim()) {
       toast.error('Please enter a message for the AI voice.')
       return
@@ -500,6 +516,10 @@ export default function EditMemorialPage() {
   }
 
   const handleGenerateCloneVoice = async () => {
+    if (!supportsVoiceTributes) {
+      toast.error('Voice features are not available for PAWS memorials.')
+      return
+    }
     if (!cloneVoiceAudio) {
       toast.error('Please upload a voice sample.')
       return
@@ -579,13 +599,13 @@ export default function EditMemorialPage() {
       return
     }
 
-    const normalized = {
+    const normalized = supportsVoiceTributes ? {
       ...(voiceProfilesPayload || {}),
       version: 2,
       selectedProfileKey: selectedVoiceProfileKey,
       profiles: voiceProfilesPayload?.profiles || {},
-    }
-    const hasAnyVoiceAudio = Object.values(normalized.profiles || {}).some((profile: any) =>
+    } : null
+    const hasAnyVoiceAudio = Object.values(normalized?.profiles || {}).some((profile: any) =>
       Object.values(profile?.moods || {}).some((url: any) => typeof url === 'string' && !!url)
     )
 
@@ -597,8 +617,8 @@ export default function EditMemorialPage() {
         visibility: visibility,
         gender: gender,
         family_password: familyPassword.toUpperCase(),
-        voice_message: voiceType === 'clone-voice' ? cloneVoiceText.trim() || voiceMessage || null : voiceMessage || null,
-        voice_generation_status: hasAnyVoiceAudio ? 'generated' : 'pending',
+        voice_message: supportsVoiceTributes ? (voiceType === 'clone-voice' ? cloneVoiceText.trim() || voiceMessage || null : voiceMessage || null) : null,
+        voice_generation_status: supportsVoiceTributes ? (hasAnyVoiceAudio ? 'generated' : 'pending') : null,
         ai_voice_moods: normalized,
       })
       .eq('id', memorialId)
@@ -607,7 +627,9 @@ export default function EditMemorialPage() {
     if (error) {
       toast.error(error.message)
     } else {
-      await syncVoiceProfileLabels(normalized.profiles || {})
+      if (supportsVoiceTributes) {
+        await syncVoiceProfileLabels(normalized?.profiles || {})
+      }
       toast.success('Memorial updated!')
     }
   }
@@ -851,9 +873,11 @@ export default function EditMemorialPage() {
           <button onClick={() => setTab('bio')} className={`py-2 px-4 ${tab === 'bio' ? 'border-b-2 border-memorial-accent dark:border-memorialDark-accent font-semibold text-memorial-text dark:text-memorialDark-text' : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors'}`}>
             Bio & Settings
           </button>
-          <button onClick={() => setTab('voices')} className={`py-2 px-4 ${tab === 'voices' ? 'border-b-2 border-memorial-accent dark:border-memorialDark-accent font-semibold text-memorial-text dark:text-memorialDark-text' : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors'}`}>
-            AI Voices
-          </button>
+          {supportsVoiceTributes && (
+            <button onClick={() => setTab('voices')} className={`py-2 px-4 ${tab === 'voices' ? 'border-b-2 border-memorial-accent dark:border-memorialDark-accent font-semibold text-memorial-text dark:text-memorialDark-text' : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors'}`}>
+              AI Voices
+            </button>
+          )}
           <button onClick={() => setTab('gallery')} className={`py-2 px-4 ${tab === 'gallery' ? 'border-b-2 border-memorial-accent dark:border-memorialDark-accent font-semibold text-memorial-text dark:text-memorialDark-text' : 'text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors'}`}>
             Memory Lane
           </button>
@@ -940,7 +964,7 @@ export default function EditMemorialPage() {
           )}
 
           {/* === TAB 2: AI Voices === */}
-          {tab === 'voices' && (
+          {supportsVoiceTributes && tab === 'voices' && (
             <form onSubmit={handleUpdateBio} className="space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center gap-2">

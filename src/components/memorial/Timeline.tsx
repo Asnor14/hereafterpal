@@ -28,7 +28,7 @@ export default function Timeline({ milestones }) {
     return (
         <div className="relative">
             {/* Vertical Timeline Line (hidden on mobile) */}
-            <div className="hidden md:block absolute left-8 top-0 bottom-0 w-0.5 bg-memorial-divider dark:bg-memorialDark-divider" />
+            <div className="hidden md:block absolute left-10 top-0 bottom-0 w-0.5 bg-memorial-divider dark:bg-memorialDark-divider" />
 
             {/* Milestones */}
             <div className="space-y-6 md:space-y-8">
@@ -44,9 +44,9 @@ export default function Timeline({ milestones }) {
                         {/* Mobile Layout: Vertical with date on left */}
                         <div className="md:flex md:items-start md:gap-8">
                             {/* Date Section */}
-                            <div className="flex items-center gap-3 mb-3 md:mb-0 md:w-32 md:flex-shrink-0 md:text-right md:pt-1">
+                            <div className="flex items-center gap-3 mb-3 md:mb-0 md:w-36 lg:w-40 md:flex-shrink-0 md:justify-end md:pr-8 md:text-right md:pt-1">
                                 {/* Timeline Dot (Desktop only) */}
-                                <div className="hidden md:block absolute left-6 w-4 h-4 rounded-full bg-memorial-accent dark:bg-memorialDark-accent border-4 border-memorial-surface dark:border-memorialDark-surface" />
+                                <div className="hidden md:block absolute left-8 top-2 z-0 w-4 h-4 rounded-full bg-memorial-accent dark:bg-memorialDark-accent border-4 border-memorial-surface dark:border-memorialDark-surface" />
 
                                 {/* Calendar Icon (Mobile only) */}
                                 <div className="md:hidden w-8 h-8 rounded-full bg-memorial-accent/10 dark:bg-memorialDark-accent/10 flex items-center justify-center flex-shrink-0">
@@ -56,7 +56,7 @@ export default function Timeline({ milestones }) {
                                 {/* Date Text */}
                                 <time
                                     dateTime={milestone.date}
-                                    className="text-sm md:text-base font-medium text-memorial-accent dark:text-memorialDark-accent"
+                                    className="relative z-10 whitespace-nowrap text-sm md:text-base font-medium text-memorial-accent dark:text-memorialDark-accent"
                                 >
                                     {getYear(milestone.date)}
                                 </time>

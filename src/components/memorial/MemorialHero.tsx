@@ -92,7 +92,8 @@ export default function MemorialHero({ memorial }) {
 
     if (!memorial) return null;
 
-    const { name, date_of_birth, date_of_passing, image_url, quote, bio, ai_voice_moods } = memorial;
+    const { name, date_of_birth, date_of_passing, image_url, quote, bio, ai_voice_moods, service_type } = memorial;
+    const supportsVoiceTributes = service_type !== 'PAWS';
     const voiceProfiles = buildVoiceProfiles(ai_voice_moods);
     const voiceKeys = Object.keys(voiceProfiles);
     const selectedProfile = selectedVoiceKey ? voiceProfiles[selectedVoiceKey] : null;
@@ -304,7 +305,7 @@ export default function MemorialHero({ memorial }) {
                         </motion.blockquote>
 
                         {/* AI Voice Tribute Player */}
-                        {voiceKeys.length > 0 && (
+                        {supportsVoiceTributes && voiceKeys.length > 0 && (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
