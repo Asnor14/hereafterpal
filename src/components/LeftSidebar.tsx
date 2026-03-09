@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, memo } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import NextImage from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -265,7 +266,14 @@ function LeftSidebar({ user, isOpen, onClose }: { user: any, isOpen: boolean, on
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 border-r border-memorial-border dark:border-memorialDark-border bg-memorial-surface dark:bg-memorialDark-surface transition-colors z-30">
                 <div className="p-6">
-                    <Link href="/dashboard" className="block">
+                    <Link href="/dashboard" className="inline-flex items-center gap-3">
+                    <NextImage
+                        src="/hereafterpal_logo.png"
+                        alt="HereafterPal logo"
+                        width={36}
+                        height={36}
+                        className="h-9 w-9 rounded-sm"
+                        />
                         <h1 className="text-2xl font-serif text-memorial-text dark:text-memorialDark-text tracking-tight">
                             Hereafter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
                         </h1>
@@ -302,7 +310,14 @@ function LeftSidebar({ user, isOpen, onClose }: { user: any, isOpen: boolean, on
                             className="fixed top-0 left-0 w-64 h-full bg-memorial-surface dark:bg-memorialDark-surface z-50 overflow-y-auto flex flex-col md:hidden border-r border-memorial-border dark:border-memorialDark-border"
                         >
                             <div className="p-4 flex items-center justify-between border-b border-memorial-border dark:border-memorialDark-border">
-                                <Link href="/dashboard" onClick={onClose}>
+                                <Link href="/dashboard" onClick={onClose} className="inline-flex items-center gap-3">
+                                    <NextImage
+                                        src="/hereafterpal_logo.png"
+                                        alt="HereafterPal logo"
+                                        width={32}
+                                        height={32}
+                                        className="h-8 w-8 rounded-sm"
+                                    />
                                     <h1 className="text-xl font-serif text-memorial-text dark:text-memorialDark-text tracking-tight">
                                         Hereafter<span className="text-memorial-accent dark:text-memorialDark-accent">Pal</span>
                                     </h1>

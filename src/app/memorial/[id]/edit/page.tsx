@@ -10,6 +10,12 @@ import Link from 'next/link'
 import DashboardLayout from '@/components/DashboardLayout'
 import { canAccess, getPhotoLimit, hasServicePlan } from '@/lib/planFeatures'
 import { processImage } from '@/lib/imageUtils'
+import {
+  CUSTOM_MEMORIAL_QUOTE,
+  MEMORIAL_QUOTE_OPTIONS,
+  getMemorialQuoteState,
+  resolveMemorialQuote,
+} from '@/lib/memorialQuotes'
 
 interface PendingUpload {
   id: string
@@ -148,6 +154,8 @@ export default function EditMemorialPage() {
   const [photos, setPhotos] = useState([])
 
   const [bio, setBio] = useState('')
+  const [selectedQuoteOption, setSelectedQuoteOption] = useState(MEMORIAL_QUOTE_OPTIONS[0])
+  const [customQuote, setCustomQuote] = useState('')
   const [familyPassword, setFamilyPassword] = useState('')
   const [letters, setLetters] = useState([])
   const [loading, setLoading] = useState(true)
@@ -232,6 +240,9 @@ export default function EditMemorialPage() {
     }
     setMemorial(memorialData)
     setBio(memorialData.bio || '')
+    const quoteState = getMemorialQuoteState(memorialData.quote)
+    setSelectedQuoteOption(quoteState.selectedQuoteOption)
+    setCustomQuote(quoteState.customQuote)
     setFamilyPassword(memorialData.family_password || '')
     setVisibility(memorialData.visibility || 'private')
     setGender(memorialData.gender || 'female')
@@ -611,10 +622,12 @@ export default function EditMemorialPage() {
     )
 
     const toastId = toast.loading('Saving changes...')
+    const resolvedQuote = resolveMemorialQuote(selectedQuoteOption, customQuote)
     const { error } = await supabase
       .from('memorials')
       .update({
         bio: bio,
+        quote: resolvedQuote,
         visibility: visibility,
         gender: gender,
         family_password: familyPassword.toUpperCase(),
@@ -919,11 +932,42 @@ export default function EditMemorialPage() {
                   <option value="public" disabled={!isPaid}>
                     Public (Visible to anyone with the link) {isPaid ? ' (Plan Active)' : ' (Paid Plan Required)'}
                   </option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="gender">
-                  Gender
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="quote">
+                    Memorial Quote
+                  </label>
+                  <select
+                    id="quote"
+                    value={selectedQuoteOption}
+                    onChange={(e) => setSelectedQuoteOption(e.target.value)}
+                    className="select-memorial w-full"
+                  >
+                    {MEMORIAL_QUOTE_OPTIONS.map((quoteOption) => (
+                      <option key={quoteOption} value={quoteOption}>
+                        {quoteOption}
+                      </option>
+                    ))}
+                    <option value={CUSTOM_MEMORIAL_QUOTE}>Other - Write your own</option>
+                  </select>
+                  {selectedQuoteOption === CUSTOM_MEMORIAL_QUOTE && (
+                    <input
+                      type="text"
+                      value={customQuote}
+                      onChange={(e) => setCustomQuote(e.target.value)}
+                      className="input-memorial w-full mt-3"
+                      placeholder="Type a custom memorial quote"
+                      maxLength={180}
+                    />
+                  )}
+                  <p className="mt-1 text-[11px] text-memorial-textSecondary italic">
+                    This appears below the life dates in the public memorial hero.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-memorial-text dark:text-memorialDark-text" htmlFor="gender">
+                    Gender
                 </label>
                 <select
                   id="gender"

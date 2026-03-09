@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { CldImage } from 'next-cloudinary';
 import { Play, Pause, Volume2 } from 'lucide-react';
+import { DEFAULT_MEMORIAL_QUOTE } from '@/lib/memorialQuotes';
 
 const MOOD_OPTIONS = [
     { value: 'longing', label: 'Longing' },
@@ -308,7 +309,7 @@ export default function MemorialHero({ memorial }) {
                             transition={{ duration: 0.6, delay: 0.3 }}
                             className="text-base md:text-lg lg:text-xl text-white/95 italic font-serif max-w-2xl mx-auto drop-shadow-md mb-6"
                         >
-                            "{quote || 'Forever in our hearts'}"
+                            "{quote || DEFAULT_MEMORIAL_QUOTE}"
                         </motion.blockquote>
 
                         {/* AI Voice Tribute Player */}

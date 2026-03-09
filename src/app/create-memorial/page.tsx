@@ -10,6 +10,11 @@ import { CldUploadButton, CldImage } from 'next-cloudinary'
 import DashboardLayout from '@/components/DashboardLayout'
 import toast from 'react-hot-toast'
 import { getMemorialLimit, hasServicePlan } from '@/lib/planFeatures'
+import {
+  CUSTOM_MEMORIAL_QUOTE,
+  MEMORIAL_QUOTE_OPTIONS,
+  resolveMemorialQuote,
+} from '@/lib/memorialQuotes'
 
 // Mood options for AI Voice
 const MOOD_OPTIONS = [
@@ -33,6 +38,8 @@ export default function CreateMemorialPage() {
   const [visibility, setVisibility] = useState('private')
   const [gender, setGender] = useState('female')
   const [creatorRelationship, setCreatorRelationship] = useState('')
+  const [selectedQuoteOption, setSelectedQuoteOption] = useState(MEMORIAL_QUOTE_OPTIONS[0])
+  const [customQuote, setCustomQuote] = useState('')
   const [loading, setLoading] = useState(false)
 
   // Cloudinary image state
@@ -564,12 +571,14 @@ export default function CreateMemorialPage() {
         ? voiceMessage.trim()
         : cloneVoiceText.trim())
         : null
+      const resolvedQuote = resolveMemorialQuote(selectedQuoteOption, customQuote)
 
       const { data, error } = await supabase
         .from('memorials')
         .insert({
           name: name.trim(),
           bio: bio.trim(),
+          quote: resolvedQuote,
           service_type: serviceType,
           visibility: visibility,
           gender: gender,
@@ -955,6 +964,38 @@ export default function CreateMemorialPage() {
                 {bioLength} / {maxBioLength}
               </span>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="quote" className="block text-sm font-medium text-memorial-text dark:text-memorialDark-text">
+              Memorial Quote
+            </label>
+            <select
+              id="quote"
+              value={selectedQuoteOption}
+              onChange={(e) => setSelectedQuoteOption(e.target.value)}
+              className={`w-full ${selectClasses(false)}`}
+            >
+              {MEMORIAL_QUOTE_OPTIONS.map((quoteOption) => (
+                <option key={quoteOption} value={quoteOption}>
+                  {quoteOption}
+                </option>
+              ))}
+              <option value={CUSTOM_MEMORIAL_QUOTE}>Other - Write your own</option>
+            </select>
+            {selectedQuoteOption === CUSTOM_MEMORIAL_QUOTE && (
+              <input
+                type="text"
+                value={customQuote}
+                onChange={(e) => setCustomQuote(e.target.value)}
+                className={inputClasses(false)}
+                placeholder="Type a custom memorial quote"
+                maxLength={180}
+              />
+            )}
+            <p className="text-xs text-memorial-textSecondary dark:text-memorialDark-textSecondary">
+              This quote appears in the memorial hero section.
+            </p>
           </div>
 
           {/* Service Type */}
