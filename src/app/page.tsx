@@ -3,6 +3,7 @@ import QuickActionsSection from '@/components/homepage/QuickActionsSection';
 import BenefitsSection from '@/components/homepage/BenefitsSection';
 import HowItWorksSection from '@/components/homepage/HowItWorksSection';
 import PricingPreviewSection from '@/components/homepage/PricingPreviewSection';
+import FoundingTeamSection from '@/components/homepage/FoundingTeamSection';
 import FinalCTASection from '@/components/homepage/FinalCTASection';
 
 export default function Home() {
@@ -14,6 +15,7 @@ export default function Home() {
                 <BenefitsSection />
                 <HowItWorksSection />
                 <PricingPreviewSection />
+                <FoundingTeamSection />
                 <FinalCTASection />
             </div>
         </main>

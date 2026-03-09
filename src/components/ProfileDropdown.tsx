@@ -114,17 +114,16 @@ export default function ProfileDropdown({ user, onSignOut }) {
                                 <span>Account Settings</span>
                             </Link>
 
-                            <a
-                                href="#"
+                            <Link
+                                href="/help"
                                 className="profile-dropdown-item"
-                                onClick={(e) => {
-                                    e.preventDefault();
+                                onClick={() => {
                                     setIsOpen(false);
                                 }}
                             >
                                 <HelpCircle size={18} className="text-memorial-textSecondary dark:text-memorialDark-textSecondary" />
                                 <span>Help & Support</span>
-                            </a>
+                            </Link>
                         </div>
 
                         {/* Sign Out */}

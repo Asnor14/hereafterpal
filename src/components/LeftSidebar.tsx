@@ -38,7 +38,7 @@ const featureItems = [
 
 const moreItems = [
     { href: '/account', label: 'Settings', icon: Settings },
-    { href: '#', label: 'Help & Support', icon: HelpCircle, disabled: true },
+    { href: '/help', label: 'Help & Support', icon: HelpCircle },
     { href: '/pricing', label: 'Upgrade Plan', icon: CreditCard },
 ];
 
@@ -251,7 +251,7 @@ function LeftSidebar({ user, isOpen, onClose }: { user: any, isOpen: boolean, on
             {/* Sidebar Footer */}
             <div className="mt-auto pt-6 px-2 pb-2">
                 <p className="text-xs text-memorial-textTertiary dark:text-memorialDark-textTertiary">
-                    <span className="font-serif">H</span>ereafter, <span className="font-serif">P</span>al
+                    HereafterPal
                 </p>
                 <p className="text-xs text-memorial-textTertiary dark:text-memorialDark-textTertiary mt-1">
                     © 2026 All rights reserved
