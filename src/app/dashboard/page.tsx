@@ -48,6 +48,7 @@ function DashboardContent() {
   const supabase = createClient()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
+  const [userDisplayName, setUserDisplayName] = useState<string | null>(null)
   const [memorials, setMemorials] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<string | null>(null)
@@ -74,6 +75,19 @@ function DashboardContent() {
 
     const user = session.user
     setUser(user)
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    setUserDisplayName(
+      profileData?.full_name
+      || (user.user_metadata?.full_name as string | undefined)
+      || (user.user_metadata?.name as string | undefined)
+      || null
+    )
 
     // Fetch Plan
     try {
@@ -143,7 +157,7 @@ function DashboardContent() {
   return (
     <div className="dashboard-home">
       {/* Welcome Banner */}
-      <WelcomeBanner user={user} memorialCount={stats.totalMemorials} />
+      <WelcomeBanner user={user} memorialCount={stats.totalMemorials} displayName={userDisplayName} />
 
       {/* Quick Actions Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-8">

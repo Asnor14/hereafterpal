@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 
-export default function WelcomeBanner({ user, memorialCount = 0 }) {
-    const userName = user?.email?.split('@')[0] || 'there';
+export default function WelcomeBanner({ user, memorialCount = 0, displayName }: { user: any; memorialCount?: number; displayName?: string | null }) {
+    const userName = displayName?.trim() || user?.email?.split('@')[0] || 'there';
 
     return (
         <div className="welcome-banner">
