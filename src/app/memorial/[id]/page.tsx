@@ -145,9 +145,9 @@ export default function MemorialProfilePage() {
             memorial_id: memorialId,
             author_name: formData.name,
             message: formData.message,
-            role: formData.role || formData.senderName || 'Starngers',
+            role: formData.role || formData.senderName || 'Strangers',
             sender_folder_id: formData.senderFolderId || null,
-            sender_name: formData.senderName || formData.role || 'Starngers',
+            sender_name: formData.senderName || formData.role || 'Strangers',
           },
         ]);
 
