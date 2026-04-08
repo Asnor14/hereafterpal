@@ -69,12 +69,12 @@ export default function HeroSection() {
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 1, delay: 0.2 }}
-                        className="flex-1 w-full lg:h-[85vh] h-[60vh] relative"
+                        className="flex-1 w-full lg:h-[60vh] h-[30vh] relative"
                     >
                         <div className="absolute inset-0 rounded-md overflow-hidden bg-memorial-surfaceAlt/30">
-                            {/* Using existing SVG as placeholder, ensuring object-cover and grayscale architectural feel */}
+                            {/* Hero image */}
                             <Image
-                                src="/images/11.svg"
+                                src="/HONORING LIFE FOREVER.jpg"
                                 alt="Architectural Memorial Space"
                                 fill
                                 className="object-cover opacity-90 grayscale-[20%] hover:grayscale-0 transition-all duration-1000"
