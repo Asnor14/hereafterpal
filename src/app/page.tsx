@@ -1,4 +1,5 @@
 import HeroSection from '@/components/homepage/HeroSection';
+import AboutSection from '@/components/homepage/AboutSection';
 import QuickActionsSection from '@/components/homepage/QuickActionsSection';
 import BenefitsSection from '@/components/homepage/BenefitsSection';
 import HowItWorksSection from '@/components/homepage/HowItWorksSection';
@@ -11,6 +12,7 @@ export default function Home() {
         <main className="bg-memorial-bg dark:bg-memorialDark-bg min-h-screen">
             <HeroSection />
             <div className="space-y-20 md:space-y-32">
+                <AboutSection />
                 <QuickActionsSection />
                 <BenefitsSection />
                 <HowItWorksSection />

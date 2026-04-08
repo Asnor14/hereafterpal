@@ -175,12 +175,12 @@ export default function HelpPage() {
 
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                             <a
-                                href="mailto:support@hereafterpal.com"
+                                href="mailto:hereafterpal104@gmail.com"
                                 className="rounded-2xl border border-white/10 bg-white/5 p-5 transition-transform hover:-translate-y-0.5"
                             >
                                 <Mail size={18} className="text-memorial-accent dark:text-memorialDark-accent" />
                                 <h2 className="mt-4 text-lg font-semibold text-white">Contact support</h2>
-                                <p className="mt-2 text-sm text-white/65">support@hereafterpal.com</p>
+                                <p className="mt-2 text-sm text-white/65">hereafterpal104@gmail.com</p>
                             </a>
                             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                                 <Mic size={18} className="text-memorial-accent dark:text-memorialDark-accent" />

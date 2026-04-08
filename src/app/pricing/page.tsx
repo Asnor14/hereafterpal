@@ -173,8 +173,8 @@ export default function PricingPage() {
         >
           <p className="text-memorial-textSecondary dark:text-memorialDark-textSecondary">
             Questions? Contact us at{' '}
-            <a href="mailto:support@hereafterpal.com" className="text-memorial-accent dark:text-memorialDark-accent underline">
-              support@hereafterpal.com
+            <a href="mailto:hereafterpal104@gmail.com" className="text-memorial-accent dark:text-memorialDark-accent underline">
+              hereafterpal104@gmail.com
             </a>
           </p>
         </motion.div>

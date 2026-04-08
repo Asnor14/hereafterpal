@@ -51,7 +51,7 @@ export function Footer() {
               Pricing
             </Link>
             <a
-              href="mailto:support@hereafterpal.com"
+              href="mailto:hereafterpal104@gmail.com"
               className="text-memorial-textSecondary dark:text-memorialDark-textSecondary hover:text-memorial-text dark:hover:text-memorialDark-text transition-colors"
             >
               Contact

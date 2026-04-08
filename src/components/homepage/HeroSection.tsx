@@ -58,7 +58,7 @@ export default function HeroSection() {
                                     onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
                                     className="btn-ghost px-8"
                                 >
-                                    View Sample Memorial
+                                    About HereafterPal
                                 </button>
                             </div>
                         </m.div>

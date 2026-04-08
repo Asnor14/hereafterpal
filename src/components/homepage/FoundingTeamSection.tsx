@@ -14,7 +14,7 @@ const teamMembers = [
         quote: 'None of us knows what the future holds, so let us all live now, not in yesterday, but today. Let us live to witness the beautiful rainbow of hope before our eyes.',
     },
     {
-        name: 'Micaira Allich Jann Cueto',
+        name: 'Micaira Alliah Jann Cueto',
         role: 'Chief Financial Officer',
         accent: 'Financial Stewardship',
         initials: 'MC',
@@ -38,7 +38,7 @@ const teamMembers = [
         quote: 'Live well so your soul is at peace, love deeply so others never forget you, and laugh often so joy leaves its mark.',
     },
     {
-        name: 'Allieyah Thounie David',
+        name: 'Allieyah Thounnie David',
         role: 'Chief Marketing Officer',
         accent: 'Voice & Outreach',
         initials: 'AD',

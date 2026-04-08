@@ -20,7 +20,7 @@ export default function QuickActionsSection() {
 
     return (
         <LazyMotion features={domAnimation}>
-            <section id="about" ref={ref} className="py-20 md:py-32 bg-memorial-surfaceAlt/30 dark:bg-memorialDark-surfaceAlt/10 border-y border-memorial-border/30">
+            <section ref={ref} className="py-20 md:py-32 bg-memorial-surfaceAlt/30 dark:bg-memorialDark-surfaceAlt/10 border-y border-memorial-border/30">
                 <div className="container mx-auto px-6 md:px-12">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
 
